@@ -1,3 +1,10 @@
+"""Google Maps Platform integration helpers.
+
+This module is intentionally isolated from Streamlit UI code. Teammates working
+on API behavior can update request parameters or error handling here without
+touching page layout files.
+"""
+
 import os
 import plistlib
 from pathlib import Path
@@ -17,6 +24,7 @@ IOS_GOOGLE_SERVICE_PLIST = (
 
 
 def get_api_key(override=None):
+    """Resolve the Google API key from sidebar input, env var, or iOS plist."""
     if override and override.strip():
         return override.strip()
     env_key = os.environ.get("GOOGLE_MAPS_API_KEY", "").strip()
@@ -26,6 +34,7 @@ def get_api_key(override=None):
 
 
 def get_api_key_from_ios_project():
+    """Read the iOS project's GoogleService-Info.plist when available locally."""
     if not IOS_GOOGLE_SERVICE_PLIST.exists():
         return ""
     try:
@@ -36,6 +45,7 @@ def get_api_key_from_ios_project():
 
 
 def search_cafes(keyword, api_key, location=TAIPEI_CENTER, radius=3500):
+    """Search Google Places for cafes and normalize results for our database."""
     if not api_key:
         return []
 
@@ -84,6 +94,7 @@ def search_cafes(keyword, api_key, location=TAIPEI_CENTER, radius=3500):
 
 
 def fetch_place_details(place_id, api_key):
+    """Fetch richer details for one Google Place ID."""
     if not api_key or not place_id:
         return {}
 
@@ -115,7 +126,8 @@ def fetch_place_details(place_id, api_key):
     }
 
 
-def static_map_url(cafes, api_key, width=900, height=420):
+def static_map_url(cafes, api_key, width=430, height=430):
+    """Build a Google Static Maps URL with up to 10 cafe markers."""
     if not api_key:
         return ""
 
@@ -136,10 +148,12 @@ def static_map_url(cafes, api_key, width=900, height=420):
 
 
 def google_maps_url(place_id):
+    """Build a browser link to a Google Maps place."""
     return f"https://www.google.com/maps/search/?api=1&query_place_id={place_id}"
 
 
 def infer_area(address):
+    """Infer a simple Taipei area label from a formatted address."""
     for area in ["大安", "信義", "中山", "中正", "萬華", "松山", "士林", "公館", "師大"]:
         if area in address:
             return area

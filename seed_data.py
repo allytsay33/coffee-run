@@ -1,3 +1,9 @@
+"""Seed cafe data for first-run demos.
+
+These cafes give the app useful content before anyone imports Google Places
+results. The database inserts them only when their cafe_id does not exist yet.
+"""
+
 SEED_CAFES = [
     {
         "cafe_id": "cafe-001",

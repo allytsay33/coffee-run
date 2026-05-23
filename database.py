@@ -1,3 +1,9 @@
+"""SQLite persistence layer for Coffee Run.
+
+All database reads and writes should go through this module. UI files should
+not write SQL directly; this keeps database ownership clear for teammates.
+"""
+
 import sqlite3
 from pathlib import Path
 
@@ -8,6 +14,7 @@ DATABASE_FILE = Path(__file__).parent / "data" / "coffee_run.db"
 
 
 def connect():
+    """Open a SQLite connection and return rows as dict-like sqlite3.Row."""
     DATABASE_FILE.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(DATABASE_FILE)
     connection.row_factory = sqlite3.Row
@@ -15,6 +22,7 @@ def connect():
 
 
 def initialize_database():
+    """Create tables, run lightweight migrations, and seed demo cafes."""
     with connect() as connection:
         connection.executescript(
             """
@@ -110,6 +118,7 @@ def initialize_database():
 
 
 def migrate_existing_tables(connection):
+    """Add missing columns when an older local database is reused."""
     columns = {
         row["name"]
         for row in connection.execute("PRAGMA table_info(cafes)").fetchall()
@@ -140,6 +149,7 @@ def migrate_existing_tables(connection):
 
 
 def seed_cafes(connection):
+    """Insert seed cafes without overwriting cafes already saved by users."""
     for cafe in SEED_CAFES:
         connection.execute(
             """
@@ -193,18 +203,21 @@ def seed_cafes(connection):
 
 
 def split_tags(tags):
+    """Normalize comma-separated tag strings into Python lists."""
     if isinstance(tags, list):
         return tags
     return [tag for tag in (tags or "").split(",") if tag]
 
 
 def row_to_cafe(row):
+    """Convert a SQLite cafe row into the dict shape expected by UI code."""
     cafe = dict(row)
     cafe["tags"] = split_tags(cafe.get("tags"))
     return cafe
 
 
 def get_or_create_user(username):
+    """Return an existing user or create one for the demo login flow."""
     cleaned_username = username.strip()
     if not cleaned_username:
         return None
@@ -229,6 +242,7 @@ def get_or_create_user(username):
 
 
 def update_user_profile(user_id, display_name, avatar_path=None):
+    """Update profile fields from the profile page editor."""
     with connect() as connection:
         if avatar_path:
             connection.execute(
@@ -243,6 +257,7 @@ def update_user_profile(user_id, display_name, avatar_path=None):
 
 
 def get_user(user_id):
+    """Fetch one user by primary key."""
     with connect() as connection:
         row = connection.execute(
             "SELECT user_id, username, display_name, avatar_path FROM users WHERE user_id = ?",
@@ -252,6 +267,7 @@ def get_user(user_id):
 
 
 def upsert_cafe(cafe):
+    """Insert a new cafe or update an existing Google-imported cafe."""
     cafe_id = cafe.get("cafe_id") or cafe.get("google_place_id")
     if not cafe_id:
         raise ValueError("Cafe must have cafe_id or google_place_id")
@@ -311,6 +327,7 @@ def upsert_cafe(cafe):
 
 
 def list_cafes():
+    """List cafes for exploration, sorted by best available rating."""
     with connect() as connection:
         rows = connection.execute(
             """
@@ -325,18 +342,21 @@ def list_cafes():
 
 
 def get_cafe(cafe_id):
+    """Fetch one cafe by cafe_id."""
     with connect() as connection:
         row = connection.execute("SELECT * FROM cafes WHERE cafe_id = ?", (cafe_id,)).fetchone()
     return row_to_cafe(row) if row else None
 
 
 def list_areas():
+    """Return distinct cafe areas for the area filter."""
     with connect() as connection:
         rows = connection.execute("SELECT DISTINCT area FROM cafes ORDER BY area").fetchall()
     return [row["area"] for row in rows]
 
 
 def list_all_tags():
+    """Return all cafe and post tags for the detailed tag filter."""
     tags = set()
     for cafe in list_cafes():
         tags.update(cafe["tags"])
@@ -347,6 +367,7 @@ def list_all_tags():
 
 
 def get_favorite_ids(user_id):
+    """Return the current user's favorite cafe IDs as a set."""
     with connect() as connection:
         rows = connection.execute(
             "SELECT cafe_id FROM favorites WHERE user_id = ?",
@@ -356,6 +377,7 @@ def get_favorite_ids(user_id):
 
 
 def add_favorite(user_id, cafe_id):
+    """Save a cafe to the current user's favorites."""
     with connect() as connection:
         connection.execute(
             "INSERT OR IGNORE INTO favorites (user_id, cafe_id) VALUES (?, ?)",
@@ -364,6 +386,7 @@ def add_favorite(user_id, cafe_id):
 
 
 def remove_favorite(user_id, cafe_id):
+    """Remove a cafe from the current user's favorites."""
     with connect() as connection:
         connection.execute(
             "DELETE FROM favorites WHERE user_id = ? AND cafe_id = ?",
@@ -372,6 +395,7 @@ def remove_favorite(user_id, cafe_id):
 
 
 def list_favorite_cafes(user_id):
+    """List the cafes a user has favorited, newest first."""
     with connect() as connection:
         rows = connection.execute(
             """
@@ -387,6 +411,7 @@ def list_favorite_cafes(user_id):
 
 
 def add_review(user_id, cafe_id, rating, note):
+    """Create a legacy cafe review and refresh the cafe user rating."""
     with connect() as connection:
         connection.execute(
             """
@@ -399,6 +424,7 @@ def add_review(user_id, cafe_id, rating, note):
 
 
 def list_reviews(user_id):
+    """List legacy reviews written by one user."""
     with connect() as connection:
         rows = connection.execute(
             """
@@ -414,6 +440,7 @@ def list_reviews(user_id):
 
 
 def create_post(user_id, cafe_id, content, rating, image_path, tags):
+    """Create a social post and fold its rating/tags back into cafe data."""
     with connect() as connection:
         cursor = connection.execute(
             """
@@ -436,6 +463,7 @@ def create_post(user_id, cafe_id, content, rating, image_path, tags):
 
 
 def list_posts(cafe_id=None):
+    """List social posts, optionally limited to one cafe."""
     params = []
     cafe_filter = ""
     if cafe_id:
@@ -473,6 +501,7 @@ def list_posts(cafe_id=None):
 
 
 def user_liked_post(user_id, post_id):
+    """Return whether a user has liked a post."""
     with connect() as connection:
         row = connection.execute(
             "SELECT 1 FROM likes WHERE user_id = ? AND post_id = ?",
@@ -482,6 +511,7 @@ def user_liked_post(user_id, post_id):
 
 
 def toggle_like(user_id, post_id):
+    """Add or remove a user's like for one post."""
     with connect() as connection:
         existing = connection.execute(
             "SELECT 1 FROM likes WHERE user_id = ? AND post_id = ?",
@@ -500,6 +530,7 @@ def toggle_like(user_id, post_id):
 
 
 def add_comment(user_id, post_id, content):
+    """Attach a new comment to a post."""
     with connect() as connection:
         connection.execute(
             "INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)",
@@ -508,6 +539,7 @@ def add_comment(user_id, post_id, content):
 
 
 def list_comments(post_id):
+    """List comments for one post in chronological order."""
     with connect() as connection:
         rows = connection.execute(
             """
@@ -523,6 +555,7 @@ def list_comments(post_id):
 
 
 def refresh_cafe_user_rating(cafe_id):
+    """Recalculate a cafe's average user rating from reviews and posts."""
     with connect() as connection:
         review_avg = connection.execute(
             """
@@ -542,6 +575,7 @@ def refresh_cafe_user_rating(cafe_id):
 
 
 def refresh_cafe_tags(cafe_id):
+    """Merge post tags into the cafe's searchable tag list."""
     with connect() as connection:
         current = connection.execute(
             "SELECT tags FROM cafes WHERE cafe_id = ?",
@@ -567,6 +601,7 @@ def refresh_cafe_tags(cafe_id):
 
 
 def get_user_stats(user_id):
+    """Return profile/sidebar metrics for one user."""
     with connect() as connection:
         favorite_count = connection.execute(
             "SELECT COUNT(*) FROM favorites WHERE user_id = ?",
@@ -593,6 +628,7 @@ def get_user_stats(user_id):
 
 
 def list_footprint_cafes(user_id):
+    """Return cafes where the user has created at least one post."""
     with connect() as connection:
         rows = connection.execute(
             """
