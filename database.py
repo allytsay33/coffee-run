@@ -244,6 +244,12 @@ def initialize_database():
         seed_demo_social_data(connection)
 
 
+def run_migrations():
+    """Run all schema migrations on every startup (idempotent, fast)."""
+    with connect() as connection:
+        migrate_existing_tables(connection)
+
+
 def migrate_existing_tables(connection):
     """Add columns needed by new screens when an older database exists."""
     if connection.is_postgres:

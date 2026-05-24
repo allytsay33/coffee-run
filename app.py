@@ -27,10 +27,11 @@ def main():
     st.set_page_config(page_title="BrewBound Social", page_icon="Coffee", layout="wide")
     inject_mobile_styles()
 
-    # initialize_database is cached so it only runs once per deployment,
-    # not on every Streamlit rerun triggered by user interaction.
+    # Table creation and seeding run once per deployment (cached).
+    # Migrations run on every startup so new columns are always applied.
     try:
         _initialize_database_once()
+        database.run_migrations()
     except Exception as error:
         st.error("資料庫連線失敗。請檢查 Supabase 連線字串與套件安裝狀態。")
         st.code(str(error))
