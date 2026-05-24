@@ -5,6 +5,7 @@ the app keeps using its local SQLite database so UI development remains usable.
 All page modules call this repository layer instead of executing SQL directly.
 """
 
+import hashlib
 import os
 import sqlite3
 from pathlib import Path
@@ -247,6 +248,7 @@ def migrate_existing_tables(connection):
     """Add columns needed by new screens when an older database exists."""
     if connection.is_postgres:
         for statement in (
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT",
             "ALTER TABLE cafes ADD COLUMN IF NOT EXISTS google_place_id TEXT",
             "ALTER TABLE cafes ADD COLUMN IF NOT EXISTS lat REAL",
             "ALTER TABLE cafes ADD COLUMN IF NOT EXISTS lng REAL",
@@ -288,6 +290,7 @@ def migrate_existing_tables(connection):
         "display_name": "ALTER TABLE users ADD COLUMN display_name TEXT",
         "avatar_path": "ALTER TABLE users ADD COLUMN avatar_path TEXT",
         "bio": "ALTER TABLE users ADD COLUMN bio TEXT NOT NULL DEFAULT ''",
+        "password_hash": "ALTER TABLE users ADD COLUMN password_hash TEXT",
     }
     for column, statement in user_migrations.items():
         if column not in user_columns:
@@ -466,6 +469,52 @@ def get_or_create_user(username):
             (cleaned_username,),
         ).fetchone()
     return dict(row)
+
+
+def _hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def register_user(username, password, avatar_path=None):
+    """Create a new account with a hashed password; return None if username taken."""
+    username = username.strip()
+    if not username or not password:
+        return None
+    password_hash = _hash_password(password)
+    with connect() as connection:
+        existing = connection.execute(
+            "SELECT user_id FROM users WHERE username = ?", (username,)
+        ).fetchone()
+        if existing:
+            return None
+        connection.execute(
+            "INSERT INTO users (username, display_name, password_hash, avatar_path) VALUES (?, ?, ?, ?)",
+            (username, username, password_hash, avatar_path),
+        )
+        row = connection.execute(
+            "SELECT user_id, username, display_name, avatar_path, bio FROM users WHERE username = ?",
+            (username,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def login_user(username, password):
+    """Return user dict if credentials are correct, None otherwise."""
+    username = username.strip()
+    if not username or not password:
+        return None
+    with connect() as connection:
+        row = connection.execute(
+            "SELECT user_id, username, display_name, avatar_path, bio, password_hash FROM users WHERE username = ?",
+            (username,),
+        ).fetchone()
+    if not row:
+        return None
+    user = dict(row)
+    stored_hash = user.pop("password_hash", None)
+    if stored_hash and stored_hash != _hash_password(password):
+        return None
+    return user
 
 
 def update_user_profile(user_id, display_name, bio="", avatar_path=None):

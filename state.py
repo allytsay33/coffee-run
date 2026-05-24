@@ -27,6 +27,8 @@ def initialize_state():
         st.session_state.profile_editing = False
     if "explore_filter_open" not in st.session_state:
         st.session_state.explore_filter_open = False
+    if "login_view" not in st.session_state:
+        st.session_state.login_view = "welcome"
     if "explore_filters" not in st.session_state:
         st.session_state.explore_filters = {
             "keyword": "",

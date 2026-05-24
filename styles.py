@@ -490,6 +490,37 @@ def inject_mobile_styles():
             margin-top: -1.18rem;
         }
 
+        /* ── Login page ── */
+        .login-logo {
+            text-align: center;
+            margin: 3rem auto 1.5rem;
+        }
+
+        .login-logo img {
+            width: 110px;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid var(--line);
+            box-shadow: 0 4px 18px rgba(124, 94, 67, 0.18);
+        }
+
+        .login-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--coffee-dark);
+            text-align: center;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.25rem;
+        }
+
+        .login-subtitle {
+            font-size: 0.95rem;
+            color: var(--muted);
+            text-align: center;
+            margin-bottom: 2.2rem;
+        }
+
         .st-key-profile_subnav {
             margin: 1.1rem 0 1.25rem;
             border-bottom: 1px solid var(--line);
