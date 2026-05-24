@@ -555,8 +555,10 @@ def update_user_profile(user_id, display_name, bio="", avatar_path=None):
                 "UPDATE users SET display_name = ?, bio = ? WHERE user_id = ?",
                 (display_name, bio.strip(), user_id),
             )
+    get_user.clear()
 
 
+@st.cache_data(ttl=30)
 def get_user(user_id):
     """Fetch one user by primary key."""
     with connect() as connection:
@@ -924,6 +926,7 @@ def get_cafe_photos(cafe_id, limit=6):
     return [row["image_path"] for row in rows]
 
 
+@st.cache_data(ttl=15)
 def user_liked_post(user_id, post_id):
     """Return whether a user has liked a post."""
     with connect() as connection:
@@ -940,6 +943,7 @@ def toggle_like(user_id, post_id):
         else:
             connection.execute("INSERT INTO likes (user_id, post_id) VALUES (?, ?)", (user_id, post_id))
     list_posts.clear()
+    user_liked_post.clear()
 
 
 def add_comment(user_id, post_id, content):

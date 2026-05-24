@@ -20,6 +20,7 @@ from styles import inject_mobile_styles
 @st.cache_resource
 def _initialize_database_once():
     database.initialize_database()
+    database.run_migrations()
 
 
 def main():
@@ -31,7 +32,6 @@ def main():
     # Migrations run on every startup so new columns are always applied.
     try:
         _initialize_database_once()
-        database.run_migrations()
     except Exception as error:
         st.error("資料庫連線失敗。請檢查 Supabase 連線字串與套件安裝狀態。")
         st.code(str(error))
