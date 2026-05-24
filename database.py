@@ -246,7 +246,6 @@ def initialize_database():
 
 def run_migrations():
     """Run all schema migrations on every startup (idempotent, fast)."""
-    from config import DEFAULT_TAGS
     with connect() as connection:
         migrate_existing_tables(connection)
         ts_type = "TIMESTAMPTZ" if connection.is_postgres else "TEXT"
@@ -267,11 +266,6 @@ def run_migrations():
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        for tag in DEFAULT_TAGS:
-            connection.execute(
-                "INSERT INTO tags (tag) VALUES (?) ON CONFLICT(tag) DO NOTHING",
-                (tag,),
-            )
 
 
 def migrate_existing_tables(connection):
