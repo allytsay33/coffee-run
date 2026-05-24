@@ -667,8 +667,9 @@ def list_areas():
 
 
 def list_all_tags():
-    """Return all cafe and post tags available for filters."""
-    tags = set()
+    """Return all tags available for filters, always including DEFAULT_TAGS."""
+    from config import DEFAULT_TAGS
+    tags = set(DEFAULT_TAGS)
     for cafe in list_cafes():
         tags.update(cafe["tags"])
     with connect() as connection:
