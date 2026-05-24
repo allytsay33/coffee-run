@@ -246,6 +246,7 @@ def initialize_database():
 
 def run_migrations():
     """Run all schema migrations on every startup (idempotent, fast)."""
+    from config import DEFAULT_TAGS
     with connect() as connection:
         migrate_existing_tables(connection)
         ts_type = "TIMESTAMPTZ" if connection.is_postgres else "TEXT"
@@ -260,6 +261,17 @@ def run_migrations():
                 FOREIGN KEY (cafe_id) REFERENCES cafes (cafe_id)
             )
         """)
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS tags (
+                tag TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        for tag in DEFAULT_TAGS:
+            connection.execute(
+                "INSERT INTO tags (tag) VALUES (?) ON CONFLICT(tag) DO NOTHING",
+                (tag,),
+            )
 
 
 def migrate_existing_tables(connection):
@@ -667,14 +679,15 @@ def list_areas():
 
 
 def list_all_tags():
-    """Return all tags available for filters, always including DEFAULT_TAGS."""
-    from config import DEFAULT_TAGS
-    tags = set(DEFAULT_TAGS)
+    """Return all tags from the tags reference table plus any used in posts/cafes."""
+    tags = set()
     for cafe in list_cafes():
         tags.update(cafe["tags"])
     with connect() as connection:
-        rows = connection.execute("SELECT DISTINCT tag FROM post_tags ORDER BY tag").fetchall()
-    tags.update(row["tag"] for row in rows)
+        for row in connection.execute("SELECT tag FROM tags").fetchall():
+            tags.add(row["tag"])
+        for row in connection.execute("SELECT DISTINCT tag FROM post_tags").fetchall():
+            tags.add(row["tag"])
     return sorted(tags)
 
 
