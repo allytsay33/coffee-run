@@ -490,6 +490,24 @@ def inject_mobile_styles():
             margin-top: -1.18rem;
         }
 
+        .st-key-profile_subnav {
+            margin: 1.1rem 0 1.25rem;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 0.35rem;
+        }
+
+        .st-key-profile_subnav [data-testid="stSegmentedControl"] {
+            background: transparent;
+        }
+
+        .st-key-profile_tab_content {
+            min-height: 22rem;
+        }
+
+        .st-key-profile_tab_content .coffee-section-title {
+            margin-top: 1.2rem;
+        }
+
         .st-key-liquid_glass_nav {
             position: fixed;
             left: 50%;
@@ -801,29 +819,49 @@ def inject_mobile_styles():
             .st-key-profile_identity,
             .st-key-profile_top3,
             .st-key-profile_map {
-                margin-bottom: 1.55rem;
+                margin-bottom: 1.15rem;
             }
 
             .st-key-profile_identity [data-testid="stVerticalBlockBorderWrapper"],
             .st-key-profile_top3 [data-testid="stVerticalBlockBorderWrapper"],
             .st-key-profile_map [data-testid="stVerticalBlockBorderWrapper"] {
-                padding: 1.6rem 1.8rem;
+                padding: 1.05rem 1.25rem;
             }
 
             .profile-avatar {
-                height: 8.2rem;
-                width: 8.2rem;
-                font-size: 2.5rem;
+                height: 5.5rem;
+                width: 5.5rem;
+                font-size: 1.75rem;
             }
 
             .profile-name {
-                font-size: 1.65rem;
+                font-size: 1.3rem;
                 text-align: left;
             }
 
             .profile-handle {
-                font-size: 0.9rem;
+                font-size: 0.78rem;
                 text-align: left;
+            }
+
+            .profile-bio {
+                font-size: 0.78rem;
+                line-height: 1.55;
+                margin-bottom: 0;
+            }
+
+            .st-key-profile_subnav {
+                margin-top: 0.85rem;
+            }
+
+            .st-key-profile_subnav [data-testid="stSegmentedControl"] {
+                max-width: 30rem;
+            }
+
+            .st-key-profile_map .st-key-brewbound_map {
+                margin: 0.7rem 0 0;
+                border-radius: 0.65rem;
+                overflow: hidden;
             }
         }
 

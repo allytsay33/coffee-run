@@ -26,7 +26,8 @@ def render_login_page():
 def render_mobile_nav():
     """Render a fixed bottom navigation bar and return the selected page."""
     user = database.get_user(st.session_state.user["user_id"])
-    st.session_state.user = user
+    if user:
+        st.session_state.user = user
 
     label_to_page = {
         "探索": "探索地圖",

@@ -31,6 +31,14 @@ cp .streamlit/secrets.toml.example .streamlit/secrets.toml
 
 接著把 `.streamlit/secrets.toml` 內的 `SUPABASE_DB_URL` 改成 Supabase Dashboard 的 `Connect > Session pooler` 連線字串，再重新啟動網站。完整操作步驟見 `docs/12_supabase_setup.md`。
 
+第一次連上 Supabase 時，程式會自動建立 11 張資料表並寫入少量示範咖啡廳（僅在該 `cafe_id` 尚不存在時插入，不會覆蓋你之後的資料）。也可手動初始化：
+
+```bash
+python3 scripts/init_database.py
+```
+
+若希望雲端資料庫完全空白、只靠 Google 搜尋與使用者操作累積資料，可設定環境變數 `SKIP_SEED_DATA=1` 後再啟動。手動建表 SQL 見 `scripts/supabase_schema.sql`。
+
 ## 專案文件
 
 - `docs/01_python_only_check.md`：Python 使用範圍確認

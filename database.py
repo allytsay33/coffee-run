@@ -294,8 +294,16 @@ def migrate_existing_tables(connection):
             connection.execute(statement)
 
 
+def should_seed_demo_content():
+    """Allow disabling first-run demo inserts for empty cloud databases."""
+    value = os.environ.get("SKIP_SEED_DATA", "").strip().lower()
+    return value not in {"1", "true", "yes"}
+
+
 def seed_cafes(connection):
     """Insert initial cafes without overwriting user-generated data."""
+    if not should_seed_demo_content():
+        return
     for cafe in SEED_CAFES:
         connection.execute(
             """
@@ -350,6 +358,8 @@ def seed_cafes(connection):
 
 def seed_cafe_traits(connection):
     """Create useful filter traits for seed cafes based on their labels."""
+    if not should_seed_demo_content():
+        return
     for cafe in SEED_CAFES:
         tags = set(cafe["tags"])
         connection.execute(
@@ -378,6 +388,8 @@ def seed_cafe_traits(connection):
 
 def seed_demo_social_data(connection):
     """Seed lightweight community activity so a fresh demo is not empty."""
+    if not should_seed_demo_content():
+        return
     demo_posts = [
         ("coffee_daily", "cafe-001", "窗邊很安靜，插座位置也夠，適合帶電腦來讀書。", 5, ["安靜", "插座多", "適合讀書"]),
         ("late_latte", "cafe-005", "晚上想聊天或吃甜點時很方便，氣氛舒服。", 4, ["深夜咖啡廳", "甜點", "適合聊天"]),

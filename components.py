@@ -81,7 +81,7 @@ def toggle_favorite_button(cafe_id, key, stretch=False):
 
 def render_cafe_photos(cafe_id, columns=3):
     """Show community-uploaded cafe photos as the result gallery."""
-    photos = [path for path in database.get_cafe_photos(cafe_id) if Path(path).exists()]
+    photos = [path for path in database.get_cafe_photos(cafe_id) if path.startswith("http") or Path(path).exists()]
     if not photos:
         return
     photo_columns = st.columns(columns)
@@ -120,7 +120,7 @@ def render_cafe_card(cafe, compact=False):
 
 def render_post_images(post):
     """Render all stored photos for one post in upload order."""
-    photos = [path for path in post.get("photos", []) if Path(path).exists()]
+    photos = [path for path in post.get("photos", []) if path.startswith("http") or Path(path).exists()]
     if not photos:
         st.markdown(
             f'<div class="post-preview"><img src="{POST_PREVIEW_IMAGES[post["post_id"] % len(POST_PREVIEW_IMAGES)]}" '

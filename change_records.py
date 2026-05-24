@@ -51,4 +51,17 @@ CHANGE_RECORDS = [
             "未修改資料庫 schema、API Key 設定或其他頁面功能。",
         ],
     },
+    {
+        "change_id": "ui-profile-three-subpages",
+        "scope": "我的頁面改為可切換的探店紀錄、足跡地圖、已收藏三個獨立子頁。",
+        "files": [
+            "pages/profile.py",
+            "styles.py",
+        ],
+        "notes": [
+            "pages/profile.py 沿用既有資料查詢，將 Top 3 與貼文只放於探店紀錄，足跡及收藏分別以地圖呈現。",
+            "styles.py 僅調整個人頁身份區、子頁切換列與地圖內容的簡約顯示樣式。",
+            "未修改資料庫 schema、探索頁、社群頁或登入流程。",
+        ],
+    },
 ]
