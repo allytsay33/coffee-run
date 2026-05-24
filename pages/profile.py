@@ -62,21 +62,62 @@ def render_profile_settings():
             st.rerun()
 
 
+def render_top3_editor(user):
+    """Inline editor for selecting the user's top-3 cafes."""
+    cafes = database.list_cafes()
+    options = {"（未設定）": None} | {f'{c["name"]}｜{c["area"]}': c["cafe_id"] for c in cafes}
+    current = database.get_user_top3(user["user_id"])
+
+    def _default(slot):
+        cafe = current[slot]
+        if not cafe:
+            return "（未設定）"
+        key = f'{cafe["name"]}｜{cafe["area"]}'
+        return key if key in options else "（未設定）"
+
+    with st.form("top3_form"):
+        st.markdown('<div class="profile-section-title">編輯 TOP 3</div>', unsafe_allow_html=True)
+        sel1 = st.selectbox("🥇 第 1 名", list(options), index=list(options).index(_default(0)))
+        sel2 = st.selectbox("🥈 第 2 名", list(options), index=list(options).index(_default(1)))
+        sel3 = st.selectbox("🥉 第 3 名", list(options), index=list(options).index(_default(2)))
+        col_save, col_cancel = st.columns(2)
+        if col_save.form_submit_button("儲存", type="primary", width="stretch"):
+            database.set_user_top3(user["user_id"], [options[sel1], options[sel2], options[sel3]])
+            st.session_state.top3_editing = False
+            st.rerun()
+        if col_cancel.form_submit_button("取消", width="stretch"):
+            st.session_state.top3_editing = False
+            st.rerun()
+
+
 def render_visit_records(user, favorites):
     """Render the user's ranked cafe list and published visit posts."""
-    with st.container(border=True, key="profile_top3"):
-        st.markdown('<div class="profile-section-title">我的 TOP 3 咖啡名單</div>', unsafe_allow_html=True)
-        top_columns = st.columns(3)
-        top_favorites = favorites[:3]
-        if not top_favorites:
-            st.caption("收藏咖啡廳後，這裡會顯示你的 TOP 3。")
-        for index, cafe in enumerate(top_favorites):
-            rating = cafe["user_rating"] or cafe["rating"]
-            top_columns[index].markdown(
-                f'<div class="top-cafe"><b>{index + 1}</b><strong>{escape(cafe["name"])}</strong>'
-                f'<small>★ {rating:.1f}　已收藏</small></div>',
-                unsafe_allow_html=True,
-            )
+    if st.session_state.get("top3_editing"):
+        render_top3_editor(user)
+    else:
+        with st.container(border=True, key="profile_top3"):
+            head = st.columns([4, 1])
+            head[0].markdown('<div class="profile-section-title">我的 TOP 3 咖啡名單</div>', unsafe_allow_html=True)
+            if head[1].button("編輯", key="edit_top3", width="stretch"):
+                st.session_state.top3_editing = True
+                st.rerun()
+            top3 = database.get_user_top3(user["user_id"])
+            if not any(top3):
+                st.caption("點右上角「編輯」設定你的 TOP 3。")
+            top_columns = st.columns(3)
+            for index, cafe in enumerate(top3):
+                if cafe:
+                    rating = cafe["user_rating"] or cafe["rating"]
+                    top_columns[index].markdown(
+                        f'<div class="top-cafe"><b>{index + 1}</b><strong>{escape(cafe["name"])}</strong>'
+                        f'<small>★ {rating:.1f}</small></div>',
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    top_columns[index].markdown(
+                        f'<div class="top-cafe top-cafe-empty"><b>{index + 1}</b><span>未設定</span></div>',
+                        unsafe_allow_html=True,
+                    )
 
     posts = database.list_posts(user_id=user["user_id"])
     st.markdown('<div class="coffee-section-title">探店貼文</div>', unsafe_allow_html=True)

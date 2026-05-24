@@ -490,6 +490,17 @@ def inject_mobile_styles():
             margin-top: -1.18rem;
         }
 
+        .top-cafe-empty b {
+            color: var(--muted);
+        }
+
+        .top-cafe-empty span {
+            color: var(--muted);
+            font-size: 0.78rem;
+            display: block;
+            margin-top: 0.15rem;
+        }
+
         /* ── Login page ── */
         .login-logo {
             text-align: center;

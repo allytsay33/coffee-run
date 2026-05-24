@@ -248,6 +248,18 @@ def run_migrations():
     """Run all schema migrations on every startup (idempotent, fast)."""
     with connect() as connection:
         migrate_existing_tables(connection)
+        ts_type = "TIMESTAMPTZ" if connection.is_postgres else "TEXT"
+        connection.execute(f"""
+            CREATE TABLE IF NOT EXISTS user_top3 (
+                user_id INTEGER NOT NULL,
+                rank INTEGER NOT NULL,
+                cafe_id TEXT NOT NULL,
+                updated_at {ts_type} NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, rank),
+                FOREIGN KEY (user_id) REFERENCES users (user_id),
+                FOREIGN KEY (cafe_id) REFERENCES cafes (cafe_id)
+            )
+        """)
 
 
 def migrate_existing_tables(connection):
@@ -697,6 +709,40 @@ def list_favorite_cafes(user_id):
         (user_id,),
         "ORDER BY favorites.created_at DESC",
     )
+
+
+def get_user_top3(user_id):
+    """Return the user's saved top-3 as an ordered list of cafe dicts (None for empty slots)."""
+    with connect() as connection:
+        rows = connection.execute(
+            """
+            SELECT user_top3.rank, cafes.*,
+                   cafe_traits.has_outlets_score, cafe_traits.no_time_limit_score,
+                   cafe_traits.quiet_score, cafe_traits.study_score, cafe_traits.chat_score,
+                   cafe_traits.dessert_score, cafe_traits.price_score,
+                   cafe_traits.open_late_score, cafe_traits.feedback_count
+            FROM user_top3
+            JOIN cafes ON cafes.cafe_id = user_top3.cafe_id
+            LEFT JOIN cafe_traits ON cafe_traits.cafe_id = cafes.cafe_id
+            WHERE user_top3.user_id = ?
+            ORDER BY user_top3.rank ASC
+            """,
+            (user_id,),
+        ).fetchall()
+    saved = {row["rank"]: row_to_cafe(dict(row)) for row in rows}
+    return [saved.get(rank) for rank in (1, 2, 3)]
+
+
+def set_user_top3(user_id, cafe_ids):
+    """Save top-3 cafe IDs (list of 3 items, None means empty slot)."""
+    with connect() as connection:
+        connection.execute("DELETE FROM user_top3 WHERE user_id = ?", (user_id,))
+        for rank, cafe_id in enumerate(cafe_ids[:3], start=1):
+            if cafe_id:
+                connection.execute(
+                    "INSERT INTO user_top3 (user_id, rank, cafe_id) VALUES (?, ?, ?)",
+                    (user_id, rank, cafe_id),
+                )
 
 
 def add_review(user_id, cafe_id, rating, note):
