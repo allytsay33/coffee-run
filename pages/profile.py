@@ -6,7 +6,7 @@ from pathlib import Path
 import streamlit as st
 
 import database
-from components import render_map, render_post_card
+from components import render_cafe_card, render_map, render_post_card
 from config import PROFILE_TABS
 from file_storage import save_uploaded_file
 
@@ -140,11 +140,15 @@ def render_footprint_map(user):
 
 
 def render_saved_map(favorites):
-    """Render favorite cafes as map markers in the saved subpage."""
+    """Render favorite cafes as map markers and cards in the saved subpage."""
     with st.container(border=True, key="profile_map"):
         st.markdown('<div class="profile-section-title">已收藏</div>', unsafe_allow_html=True)
-        st.caption("顯示已加入收藏清單的咖啡廳。")
         render_map(favorites)
+    if favorites:
+        for cafe in favorites:
+            render_cafe_card(cafe, compact=True)
+    else:
+        st.info("你還沒有收藏咖啡廳。")
 
 
 def render_profile_page():

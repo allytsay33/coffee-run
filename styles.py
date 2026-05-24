@@ -861,28 +861,28 @@ def inject_mobile_styles():
             .st-key-profile_identity,
             .st-key-profile_top3,
             .st-key-profile_map {
-                margin-bottom: 1.15rem;
+                margin-bottom: 1.55rem;
             }
 
             .st-key-profile_identity [data-testid="stVerticalBlockBorderWrapper"],
             .st-key-profile_top3 [data-testid="stVerticalBlockBorderWrapper"],
             .st-key-profile_map [data-testid="stVerticalBlockBorderWrapper"] {
-                padding: 1.05rem 1.25rem;
+                padding: 1.6rem 1.8rem;
             }
 
             .profile-avatar {
-                height: 5.5rem;
-                width: 5.5rem;
-                font-size: 1.75rem;
+                height: 8.2rem;
+                width: 8.2rem;
+                font-size: 2.5rem;
             }
 
             .profile-name {
-                font-size: 1.3rem;
+                font-size: 1.65rem;
                 text-align: left;
             }
 
             .profile-handle {
-                font-size: 0.78rem;
+                font-size: 0.9rem;
                 text-align: left;
             }
 
