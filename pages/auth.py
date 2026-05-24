@@ -67,14 +67,12 @@ def _render_register():
         username = st.text_input("帳號名", placeholder="設定你的帳號名")
         password = st.text_input("密碼", type="password", placeholder="設定密碼")
         avatar = st.file_uploader("頭貼（可略過）", type=["png", "jpg", "jpeg"])
-        col_skip, col_done = st.columns(2)
-        skip = col_skip.form_submit_button("略過頭貼", width="stretch")
-        done = col_done.form_submit_button("完成", type="primary", width="stretch")
-        if skip or done:
+        done = st.form_submit_button("完成", type="primary", width="stretch")
+        if done:
             if not username.strip() or not password:
                 st.warning("請輸入帳號名和密碼。")
             else:
-                avatar_path = save_uploaded_file(avatar, "avatar") if (done and avatar) else None
+                avatar_path = save_uploaded_file(avatar, "avatar") if avatar else None
                 user = database.register_user(username, password, avatar_path)
                 if user is None:
                     st.error("此帳號名已被使用，請換一個。")
