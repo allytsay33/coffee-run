@@ -1,7 +1,5 @@
 """Community workflow: gallery feed, post detail, and publishing."""
 
-from pathlib import Path
-
 import streamlit as st
 
 import database
@@ -95,23 +93,14 @@ def render_post_detail(post_id):
 
 
 def render_social_gallery(posts):
-    """Display a mobile three-column post gallery with tappable entries."""
+    """Display the BrewBound inspiration stream as rich social note cards."""
     if not posts:
         st.info("目前沒有貼文，點右上方新增第一篇探店紀錄。")
         return
     columns = st.columns(3)
     for index, post in enumerate(posts):
-        column = columns[index % 3]
-        photos = [path for path in post.get("photos", []) if Path(path).exists()]
-        with column:
-            if photos:
-                st.image(photos[0], width="stretch")
-            else:
-                st.markdown('<div class="gallery-placeholder">探店</div>', unsafe_allow_html=True)
-            if st.button(post["cafe_name"][:8], key=f'gallery_{post["post_id"]}', width="stretch"):
-                st.session_state.selected_post_id = post["post_id"]
-                st.session_state.social_view = "detail"
-                st.rerun()
+        with columns[index % 3]:
+            render_post_card(post)
 
 
 def render_social_page():
@@ -123,9 +112,14 @@ def render_social_page():
         render_post_detail(st.session_state.selected_post_id)
         return
 
+    st.markdown(
+        '<div class="view-heading"><h2>探索靈感</h2>'
+        '<p>愛咖啡的人都在這裡，尋找與你共鳴的不限時角落。</p></div>',
+        unsafe_allow_html=True,
+    )
     header = st.columns([4, 1])
-    search = header[0].text_input("搜尋貼文", placeholder="搜尋咖啡廳或貼文...", label_visibility="collapsed")
-    if header[1].button("＋", width="stretch"):
+    search = header[0].text_input("搜尋貼文", placeholder="搜尋咖啡廳或探店心得...", label_visibility="collapsed")
+    if header[1].button("新增", width="stretch"):
         st.session_state.social_view = "create"
         st.rerun()
     sort_by = st.segmented_control("排序", ["最新", "熱門"], default="熱門", label_visibility="collapsed")

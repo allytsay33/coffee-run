@@ -8,6 +8,7 @@ package, reusable widgets live in `components.py`, and persistence stays in
 import streamlit as st
 
 import database
+from components import render_brand_header
 from pages.auth import render_login_page, render_mobile_nav
 from pages.explore import render_explore_page
 from pages.profile import render_profile_page
@@ -18,7 +19,7 @@ from styles import inject_mobile_styles
 
 def main():
     """Initialize app-wide services, then route to the selected page."""
-    st.set_page_config(page_title="Coffee Run", page_icon="Coffee", layout="centered")
+    st.set_page_config(page_title="BrewBound Social", page_icon="Coffee", layout="wide")
     inject_mobile_styles()
 
     # Database initialization creates missing tables and seed content without
@@ -37,6 +38,7 @@ def main():
         render_login_page()
         return
 
+    render_brand_header()
     page = render_mobile_nav()
     if page == "探索地圖":
         render_explore_page()

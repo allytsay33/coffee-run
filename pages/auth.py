@@ -35,15 +35,15 @@ def render_mobile_nav():
     }
     page_to_label = {page: label for label, page in label_to_page.items()}
     current_label = page_to_label.get(st.session_state.current_page, "探索")
-    st.markdown('<div class="bottom-nav">', unsafe_allow_html=True)
-    selected_label = st.radio(
-        "頁面",
-        list(label_to_page),
-        index=list(label_to_page).index(current_label),
-        horizontal=True,
-        label_visibility="collapsed",
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+    with st.container(key="liquid_glass_nav"):
+        selected_label = st.radio(
+            "頁面",
+            list(label_to_page),
+            index=list(label_to_page).index(current_label),
+            horizontal=True,
+            label_visibility="collapsed",
+            key="mobile_bottom_nav",
+        )
 
     st.session_state.current_page = label_to_page[selected_label]
     return st.session_state.current_page

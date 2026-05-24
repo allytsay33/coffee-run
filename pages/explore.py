@@ -112,7 +112,7 @@ def sync_search_results(keyword):
 
 
 def render_explore_page():
-    """Render the mobile exploration workflow."""
+    """Render the desktop exploration workflow."""
     if st.session_state.selected_cafe_id:
         render_cafe_detail(st.session_state.selected_cafe_id)
         return
@@ -124,14 +124,28 @@ def render_explore_page():
         render_filter_sheet(areas, tags)
         return
 
-    st.markdown('<div class="coffee-screen-title">探索咖啡廳</div>', unsafe_allow_html=True)
+    st.markdown('<div class="view-heading explore-title"><h2>探索地圖</h2></div>', unsafe_allow_html=True)
     search_cols = st.columns([4, 1])
-    keyword = search_cols[0].text_input("搜尋", value=st.session_state.explore_filters["keyword"], placeholder="在這裡搜尋...", label_visibility="collapsed")
+    keyword = search_cols[0].text_input(
+        "搜尋",
+        value=st.session_state.explore_filters["keyword"],
+        placeholder="搜尋內湖、深夜、不限時、甜點強...",
+        label_visibility="collapsed",
+    )
     if search_cols[1].button("搜尋", width="stretch"):
         st.session_state.explore_filters["keyword"] = keyword
         sync_search_results(keyword)
         st.rerun()
 
+    active_filters = {**st.session_state.explore_filters, "keyword": keyword}
+    results = filtered_cafes(cafes, **active_filters)
+    st.markdown(
+        '<div class="map-status"><span></span>已成功啟用 Google Map 官方地圖 <strong>詳細</strong></div>',
+        unsafe_allow_html=True,
+    )
+    render_map(results)
+
+    st.markdown('<div class="toolbar-label">快捷篩選指標</div>', unsafe_allow_html=True)
     controls = st.columns([4, 1])
     quick_filters = controls[0].pills(
         "快速篩選",
@@ -142,15 +156,17 @@ def render_explore_page():
     ) or []
     if quick_filters != st.session_state.explore_filters["quick_filters"]:
         st.session_state.explore_filters["quick_filters"] = quick_filters
+        st.rerun()
     if controls[1].button("篩選", width="stretch"):
         st.session_state.explore_filter_open = True
         st.rerun()
 
     filters = {**st.session_state.explore_filters, "keyword": keyword, "quick_filters": quick_filters}
     results = filtered_cafes(cafes, **filters)
-    render_map(results)
-    st.markdown('<div class="coffee-section-title">搜尋結果</div>', unsafe_allow_html=True)
-    st.caption(f"共 {len(results)} 間符合條件的咖啡廳")
+    st.markdown(
+        f'<div class="result-heading">搜尋到 <strong>{len(results)}</strong> 間合適空間</div>',
+        unsafe_allow_html=True,
+    )
     if not results:
         st.info("找不到符合條件的咖啡廳，請放寬篩選或重新搜尋。")
     for cafe in results:

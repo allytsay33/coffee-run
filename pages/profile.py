@@ -7,27 +7,30 @@ import streamlit as st
 
 import database
 from components import render_cafe_card, render_map, render_post_card
-from config import PROFILE_TABS
 from file_storage import save_uploaded_file
 
 
 def render_profile_header(user, stats):
     """Render account identity, profile text, and headline statistics."""
-    if user.get("avatar_path") and Path(user["avatar_path"]).exists():
-        st.image(user["avatar_path"], width=76)
-    else:
-        initial = escape((user.get("display_name") or user["username"] or "C")[0].upper())
-        st.markdown(f'<div class="profile-avatar">{initial}</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="coffee-screen-title">{escape(user.get("display_name") or user["username"])}</div>',
-        unsafe_allow_html=True,
-    )
-    st.caption(f'@{user["username"]}')
-    if user.get("bio"):
-        st.write(user["bio"])
-    metrics = st.columns(2)
-    metrics[0].metric("探店紀錄", stats["post_count"])
-    metrics[1].metric("已收藏", stats["favorite_count"])
+    avatar, identity, metric_area = st.columns([1, 3, 3], vertical_alignment="center")
+    with avatar:
+        if user.get("avatar_path") and Path(user["avatar_path"]).exists():
+            st.image(user["avatar_path"], width=132)
+        else:
+            initial = escape((user.get("display_name") or user["username"] or "C")[0].upper())
+            st.markdown(f'<div class="profile-avatar">{initial}</div>', unsafe_allow_html=True)
+    with identity:
+        st.markdown(
+            f'<div class="profile-name">{escape(user.get("display_name") or user["username"])}　Coffee</div>'
+            f'<div class="profile-handle">@{escape(user["username"])}</div>'
+            f'<p class="profile-bio">{escape(user.get("bio") or "在城市街頭尋找完美的咖啡角落，記錄每一次探店日常。")}</p>',
+            unsafe_allow_html=True,
+        )
+    with metric_area:
+        metrics = st.columns(3)
+        metrics[0].metric("探店紀錄", stats["post_count"])
+        metrics[1].metric("收藏清單", stats["favorite_count"])
+        metrics[2].metric("造訪足跡", stats["footprint_count"])
 
 
 def render_profile_editor(user):
@@ -65,7 +68,8 @@ def render_profile_page():
         render_profile_editor(user)
         return
     stats = database.get_user_stats(user["user_id"])
-    render_profile_header(user, stats)
+    with st.container(border=True, key="profile_identity"):
+        render_profile_header(user, stats)
     actions = st.columns([2, 2, 1])
     if actions[0].button("編輯個人檔案", width="stretch"):
         st.session_state.profile_editing = True
@@ -74,10 +78,29 @@ def render_profile_page():
     with actions[2]:
         render_profile_settings()
 
+    favorites = database.list_favorite_cafes(user["user_id"])
+    with st.container(border=True, key="profile_top3"):
+        st.markdown('<div class="profile-section-title">艾莉的私房 TOP 3 咖啡名單</div>', unsafe_allow_html=True)
+        top_columns = st.columns(3)
+        for index, cafe in enumerate((favorites or database.list_cafes())[:3]):
+            rating = cafe["user_rating"] or cafe["rating"]
+            top_columns[index].markdown(
+                f'<div class="top-cafe"><b>{index + 1}</b><strong>{escape(cafe["name"])}</strong>'
+                f'<small>★ {rating:.1f}　已收藏</small></div>',
+                unsafe_allow_html=True,
+            )
+
+    footprints = database.list_footprint_cafes(user["user_id"])
+    with st.container(border=True, key="profile_map"):
+        st.markdown('<div class="profile-section-title">我的足跡地圖</div>', unsafe_allow_html=True)
+        render_map(footprints or favorites)
+
+    visible_tabs = ["探店紀錄", "已收藏"]
+    default_tab = st.session_state.profile_tab if st.session_state.profile_tab in visible_tabs else "探店紀錄"
     selected_tab = st.segmented_control(
         "個人頁分頁",
-        PROFILE_TABS,
-        default=st.session_state.profile_tab,
+        visible_tabs,
+        default=default_tab,
         label_visibility="collapsed",
     ) or st.session_state.profile_tab
     st.session_state.profile_tab = selected_tab
@@ -89,12 +112,7 @@ def render_profile_page():
             st.info("你還沒有探店紀錄。")
         for post in posts:
             render_post_card(post, compact=True)
-    elif selected_tab == "足跡地圖":
-        footprints = database.list_footprint_cafes(user["user_id"])
-        st.markdown('<div class="coffee-section-title">足跡地圖</div>', unsafe_allow_html=True)
-        render_map(footprints)
     else:
-        favorites = database.list_favorite_cafes(user["user_id"])
         st.markdown('<div class="coffee-section-title">已收藏</div>', unsafe_allow_html=True)
         if favorites:
             render_map(favorites)
