@@ -17,15 +17,20 @@ from state import initialize_state
 from styles import inject_mobile_styles
 
 
+@st.cache_resource
+def _initialize_database_once():
+    database.initialize_database()
+
+
 def main():
     """Initialize app-wide services, then route to the selected page."""
     st.set_page_config(page_title="BrewBound Social", page_icon="Coffee", layout="wide")
     inject_mobile_styles()
 
-    # Database initialization creates missing tables and seed content without
-    # erasing user data, whether storage is local or hosted by Supabase.
+    # initialize_database is cached so it only runs once per deployment,
+    # not on every Streamlit rerun triggered by user interaction.
     try:
-        database.initialize_database()
+        _initialize_database_once()
     except Exception as error:
         st.error("資料庫連線失敗。請檢查 Supabase 連線字串與套件安裝狀態。")
         st.code(str(error))

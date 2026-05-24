@@ -575,6 +575,7 @@ def _cafe_query(where_clause="", params=(), order_clause=""):
     return [row_to_cafe(row) for row in rows]
 
 
+@st.cache_data(ttl=120)
 def list_cafes():
     """List cafes ordered by the best visible rating and distance."""
     return _cafe_query(
@@ -609,6 +610,7 @@ def list_all_tags():
     return sorted(tags)
 
 
+@st.cache_data(ttl=15)
 def get_favorite_ids(user_id):
     """Return current user's favorite cafe IDs."""
     with connect() as connection:
@@ -623,12 +625,14 @@ def add_favorite(user_id, cafe_id):
             "INSERT INTO favorites (user_id, cafe_id) VALUES (?, ?) ON CONFLICT(user_id, cafe_id) DO NOTHING",
             (user_id, cafe_id),
         )
+    get_favorite_ids.clear()
 
 
 def remove_favorite(user_id, cafe_id):
     """Remove a cafe from the user's collection."""
     with connect() as connection:
         connection.execute("DELETE FROM favorites WHERE user_id = ? AND cafe_id = ?", (user_id, cafe_id))
+    get_favorite_ids.clear()
 
 
 def list_favorite_cafes(user_id):
@@ -722,6 +726,8 @@ def create_post(user_id, cafe_id, content, rating, image_paths=None, tags=None, 
     refresh_cafe_user_rating(cafe_id)
     refresh_cafe_tags(cafe_id)
     refresh_cafe_traits(cafe_id)
+    list_posts.clear()
+    list_cafes.clear()
     return post_id
 
 
@@ -756,6 +762,7 @@ def _post_query(where_clause="", params=(), order_clause="ORDER BY posts.created
     return posts
 
 
+@st.cache_data(ttl=30)
 def list_posts(cafe_id=None, user_id=None, search="", sort_by="latest"):
     """List feed posts with optional cafe, user, and text filtering."""
     conditions = []
@@ -823,6 +830,7 @@ def toggle_like(user_id, post_id):
             connection.execute("DELETE FROM likes WHERE user_id = ? AND post_id = ?", (user_id, post_id))
         else:
             connection.execute("INSERT INTO likes (user_id, post_id) VALUES (?, ?)", (user_id, post_id))
+    list_posts.clear()
 
 
 def add_comment(user_id, post_id, content):
