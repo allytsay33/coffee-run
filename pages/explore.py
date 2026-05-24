@@ -54,44 +54,45 @@ def render_filter_sheet(areas, tags):
 
 
 def render_cafe_detail(cafe_id):
-    """Render the expanded result view including photos and community posts."""
+    """Render cafe information inside the exploration focus panel."""
     cafe = database.get_cafe(cafe_id)
     if not cafe:
         st.session_state.selected_cafe_id = None
         return
-    top = st.columns([1, 4, 1])
-    if top[0].button("返回", key="close_cafe_detail", width="stretch"):
-        st.session_state.selected_cafe_id = None
-        st.rerun()
-    top[1].markdown('<div class="coffee-screen-title">店家資訊</div>', unsafe_allow_html=True)
-    with top[2]:
-        toggle_favorite_button(cafe["cafe_id"], "detail_favorite")
-
-    rating = cafe["user_rating"] or cafe["rating"]
-    st.markdown(f'<div class="coffee-card-title">{cafe["name"]}</div>', unsafe_allow_html=True)
-    st.caption(f'{rating:.1f} ★｜{format_distance(cafe["distance_meters"])}｜{cafe["opening_hours"] or "營業時間待補"}')
-    render_cafe_photos(cafe["cafe_id"])
-    st.write(cafe["description"])
-    st.write(format_tags(cafe["tags"]))
-
-    if cafe["google_place_id"] and current_api_key() and st.button("同步最新店家資訊", width="stretch"):
-        try:
-            updated = dict(cafe)
-            updated.update(google_maps.fetch_place_details(cafe["google_place_id"], current_api_key()))
-            database.upsert_cafe(updated)
-            st.success("已同步 Google 店家資訊")
+    with st.container(key="cafe_detail_panel"):
+        top = st.columns([3, 1, 1])
+        top[0].markdown('<div class="coffee-screen-title">店家資訊</div>', unsafe_allow_html=True)
+        if top[1].button("地圖", key="close_cafe_detail", width="stretch"):
+            st.session_state.selected_cafe_id = None
             st.rerun()
-        except Exception as error:
-            st.error(f"同步失敗：{error}")
-    if cafe["maps_url"]:
-        st.link_button("在 Google Maps 中查看", cafe["maps_url"], width="stretch")
+        with top[2]:
+            toggle_favorite_button(cafe["cafe_id"], "detail_favorite")
 
-    posts = database.list_posts(cafe_id=cafe_id)
-    st.markdown('<div class="coffee-section-title">社群探店貼文</div>', unsafe_allow_html=True)
-    if not posts:
-        st.info("目前還沒有貼文，前往社群成為第一位分享者。")
-    for post in posts:
-        render_post_card(post, compact=True)
+        rating = cafe["user_rating"] or cafe["rating"]
+        st.markdown(f'<div class="coffee-card-title">{cafe["name"]}</div>', unsafe_allow_html=True)
+        st.caption(f'{rating:.1f} ★｜{format_distance(cafe["distance_meters"])}｜{cafe["opening_hours"] or "營業時間待補"}')
+        render_cafe_photos(cafe["cafe_id"])
+        st.write(cafe["description"])
+        st.write(format_tags(cafe["tags"]))
+
+        if cafe["google_place_id"] and current_api_key() and st.button("同步最新店家資訊", width="stretch"):
+            try:
+                updated = dict(cafe)
+                updated.update(google_maps.fetch_place_details(cafe["google_place_id"], current_api_key()))
+                database.upsert_cafe(updated)
+                st.success("已同步 Google 店家資訊")
+                st.rerun()
+            except Exception as error:
+                st.error(f"同步失敗：{error}")
+        if cafe["maps_url"]:
+            st.link_button("在 Google Maps 中查看", cafe["maps_url"], width="stretch")
+
+        posts = database.list_posts(cafe_id=cafe_id)
+        st.markdown('<div class="coffee-section-title">社群探店貼文</div>', unsafe_allow_html=True)
+        if not posts:
+            st.info("目前還沒有貼文，前往社群成為第一位分享者。")
+        for post in posts:
+            render_post_card(post, compact=True)
 
 
 def sync_search_results(keyword):
@@ -113,10 +114,6 @@ def sync_search_results(keyword):
 
 def render_explore_page():
     """Render the desktop exploration workflow."""
-    if st.session_state.selected_cafe_id:
-        render_cafe_detail(st.session_state.selected_cafe_id)
-        return
-
     cafes = database.list_cafes()
     areas = ["全部"] + database.list_areas()
     tags = database.list_all_tags()
@@ -137,14 +134,6 @@ def render_explore_page():
         sync_search_results(keyword)
         st.rerun()
 
-    active_filters = {**st.session_state.explore_filters, "keyword": keyword}
-    results = filtered_cafes(cafes, **active_filters)
-    st.markdown(
-        '<div class="map-status"><span></span>已成功啟用 Google Map 官方地圖 <strong>詳細</strong></div>',
-        unsafe_allow_html=True,
-    )
-    render_map(results)
-
     st.markdown('<div class="toolbar-label">快捷篩選指標</div>', unsafe_allow_html=True)
     controls = st.columns([4, 1])
     quick_filters = controls[0].pills(
@@ -163,11 +152,26 @@ def render_explore_page():
 
     filters = {**st.session_state.explore_filters, "keyword": keyword, "quick_filters": quick_filters}
     results = filtered_cafes(cafes, **filters)
-    st.markdown(
-        f'<div class="result-heading">搜尋到 <strong>{len(results)}</strong> 間合適空間</div>',
-        unsafe_allow_html=True,
-    )
-    if not results:
-        st.info("找不到符合條件的咖啡廳，請放寬篩選或重新搜尋。")
-    for cafe in results:
-        render_cafe_card(cafe)
+
+    results_column, focus_column = st.columns([4, 7], gap="large")
+    with results_column:
+        with st.container(key="explore_results_panel"):
+            st.markdown(
+                f'<div class="result-heading">搜尋到 <strong>{len(results)}</strong> 間合適空間</div>',
+                unsafe_allow_html=True,
+            )
+            if not results:
+                st.info("找不到符合條件的咖啡廳，請放寬篩選或重新搜尋。")
+            for cafe in results:
+                render_cafe_card(cafe)
+
+    with focus_column:
+        with st.container(key="explore_focus_panel"):
+            if st.session_state.selected_cafe_id:
+                render_cafe_detail(st.session_state.selected_cafe_id)
+            else:
+                st.markdown(
+                    '<div class="map-status"><span></span>已成功啟用 Google Map 官方地圖 <strong>詳細</strong></div>',
+                    unsafe_allow_html=True,
+                )
+                render_map(results)

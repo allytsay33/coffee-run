@@ -632,12 +632,12 @@ def inject_mobile_styles():
         @media (min-width: 769px) {
             .block-container {
                 max-width: 1440px;
-                padding: 0 2.2rem 2.3rem;
+                padding: 0 2.2rem 2.3rem 10.3rem;
                 box-shadow: none;
             }
 
             .st-key-brewbound_header {
-                margin: 0 -2.2rem 1.3rem;
+                margin: 0 -2.2rem 1.3rem -10.3rem;
                 padding: 0.82rem 3.8rem;
             }
 
@@ -680,25 +680,46 @@ def inject_mobile_styles():
             }
 
             .st-key-liquid_glass_nav {
-                position: static;
+                position: fixed;
+                left: max(1rem, calc((100vw - 1440px) / 2 + 1.1rem));
+                top: 7.3rem;
+                bottom: auto;
                 transform: none;
-                width: min(360px, 100%);
-                margin: 0 auto 1.3rem;
-                padding: 0.23rem 0.35rem;
-                box-shadow: none;
+                width: 7.5rem;
+                margin: 0;
+                padding: 0.42rem;
+                box-shadow: 0 12px 28px rgba(72, 55, 40, 0.08);
                 border-color: var(--line);
-                background: var(--surface);
+                border-radius: 1.45rem;
+                background: rgba(255, 253, 250, 0.86);
+            }
+
+            .st-key-liquid_glass_nav [role="radiogroup"] {
+                flex-direction: column;
+                gap: 0.28rem;
+            }
+
+            .st-key-liquid_glass_nav [role="radiogroup"]::before {
+                display: none;
             }
 
             .st-key-liquid_glass_nav [data-baseweb="radio"] {
-                min-height: 2.7rem;
-                flex-direction: row;
-                gap: 0.36rem;
-                padding: 0.35rem 0.5rem;
+                flex: 0 0 auto;
+                width: 100%;
+                min-height: 3.4rem;
+                flex-direction: column;
+                gap: 0.18rem;
+                padding: 0.45rem 0.3rem;
             }
 
             .st-key-liquid_glass_nav [data-baseweb="radio"]::before {
-                font-size: 1.18rem;
+                font-size: 1.35rem;
+            }
+
+            .st-key-liquid_glass_nav [data-baseweb="radio"]:has(input:checked) {
+                background: rgba(225, 222, 219, 0.66);
+                border: 1px solid rgba(255, 255, 255, 0.72);
+                box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.84);
             }
 
             .explore-title {
@@ -715,6 +736,27 @@ def inject_mobile_styles():
                 max-height: 40rem;
                 object-fit: cover;
                 width: 100%;
+            }
+
+            .st-key-explore_results_panel {
+                max-height: calc(100vh - 14.5rem);
+                overflow-y: auto;
+                padding-right: 0.45rem;
+            }
+
+            .st-key-explore_focus_panel {
+                position: sticky;
+                top: 1rem;
+                min-height: 34rem;
+            }
+
+            .st-key-cafe_detail_panel {
+                background: var(--surface);
+                border: 1px solid var(--line);
+                border-radius: 1.2rem;
+                padding: 1rem 1.1rem 1.2rem;
+                max-height: calc(100vh - 14.5rem);
+                overflow-y: auto;
             }
 
             .map-status {
@@ -735,7 +777,7 @@ def inject_mobile_styles():
 
             .result-heading {
                 border-top: 1px solid var(--line);
-                margin-top: 1.15rem;
+                margin-top: 0;
                 padding: 1rem 0 0.9rem;
                 font-size: 0.88rem;
             }

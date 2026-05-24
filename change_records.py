@@ -38,4 +38,17 @@ CHANGE_RECORDS = [
             "既有 Supabase、Google 搜尋、收藏、發文、留言與頁面路由邏輯未更動。",
         ],
     },
+    {
+        "change_id": "ui-left-nav-split-cafe-detail",
+        "scope": "桌面版頁面導覽移至左側，探索頁店家資訊改在右側面板開啟。",
+        "files": [
+            "pages/explore.py",
+            "styles.py",
+        ],
+        "notes": [
+            "styles.py 僅調整桌面寬度下的三頁導覽定位與探索雙欄面板樣式。",
+            "pages/explore.py 保留原有搜尋、篩選、收藏與同步資料流程，改為左側列表搭配右側地圖 / 詳情切換。",
+            "未修改資料庫 schema、API Key 設定或其他頁面功能。",
+        ],
+    },
 ]
