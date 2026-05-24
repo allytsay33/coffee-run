@@ -9,15 +9,15 @@ UPLOAD_DIR = Path(__file__).parent / "data" / "uploads"
 # Default social tags double as early filter data for the explore page.
 DEFAULT_TAGS = [
     "安靜",
-    "插座",
+    "插座多",
     "不限時",
     "適合讀書",
     "適合聊天",
     "甜點",
     "平價",
-    "晚上營業",
+    "深夜咖啡廳",
     "學生友善",
 ]
 
-# Sidebar page order. Keeping this in one place avoids mismatched labels.
-PAGE_OPTIONS = ["探索地圖", "社群", "個人頁", "推薦排行"]
+QUICK_FILTERS = ["營業中", "深夜咖啡廳", "不限時", "插座多"]
+PROFILE_TABS = ["探店紀錄", "足跡地圖", "已收藏"]

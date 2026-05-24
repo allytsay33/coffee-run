@@ -100,7 +100,7 @@ likes
 
 ## 5. 完整資料庫 Schema
 
-以下是建議的 Demo 完整 schema。「目前已有」表示現有程式已大致支援；「新增」表示要實作才能完全符合 wireframe。
+以下為 Demo 完整 schema 的功能契約。實際 Supabase PostgreSQL SQL 請以 `docs/10_current_database_schema.md` 為準。
 
 ## 5.1 users：使用者
 
@@ -108,7 +108,7 @@ likes
 
 | 欄位 | 型別 | 必填 | 說明 | 狀態 |
 | --- | --- | --- | --- | --- |
-| `user_id` | INTEGER PK AUTOINCREMENT | 是 | 使用者 ID | 目前已有 |
+| `user_id` | BIGSERIAL PK | 是 | 使用者 ID | 目前已有 |
 | `username` | TEXT UNIQUE | 是 | 帳號名，登入使用 | 目前已有 |
 | `display_name` | TEXT | 否 | 顯示暱稱 | 目前已有 |
 | `avatar_path` | TEXT | 否 | 頭貼檔案路徑 | 目前已有 |
@@ -119,12 +119,12 @@ likes
 
 ```sql
 CREATE TABLE IF NOT EXISTS users (
-    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id BIGSERIAL PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
     display_name TEXT,
     avatar_path TEXT,
     bio TEXT NOT NULL DEFAULT '',
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 | 欄位 | 型別 | 說明 | 狀態 |
 | --- | --- | --- | --- |
-| `photo_id` | INTEGER PK AUTOINCREMENT | 照片 ID | 新增 |
+| `photo_id` | BIGSERIAL PK | 照片 ID | 已有 |
 | `cafe_id` | TEXT FK | 對應店家 | 新增 |
 | `image_url` | TEXT | Google / 遠端圖片 URL | 新增 |
 | `local_path` | TEXT | 本機 demo 圖片路徑 | 新增 |
@@ -242,7 +242,7 @@ CREATE TABLE IF NOT EXISTS cafe_traits (
 
 | 欄位 | 型別 | 必填 | 說明 | 狀態 |
 | --- | --- | --- | --- | --- |
-| `post_id` | INTEGER PK AUTOINCREMENT | 是 | 貼文 ID | 目前已有 |
+| `post_id` | BIGSERIAL PK | 是 | 貼文 ID | 目前已有 |
 | `user_id` | INTEGER FK | 是 | 作者 | 目前已有 |
 | `cafe_id` | TEXT FK | 是 | 必須連結的咖啡廳 | 目前已有 |
 | `content` | TEXT | 是 | 內文 | 目前已有 |
@@ -263,7 +263,7 @@ CREATE TABLE IF NOT EXISTS cafe_traits (
 
 | 欄位 | 型別 | 說明 | 狀態 |
 | --- | --- | --- | --- |
-| `photo_id` | INTEGER PK AUTOINCREMENT | 照片 ID | 新增 |
+| `photo_id` | BIGSERIAL PK | 照片 ID | 已有 |
 | `post_id` | INTEGER FK | 貼文 ID | 新增 |
 | `image_path` | TEXT | 圖片檔案位置 | 新增 |
 | `sort_order` | INTEGER DEFAULT 0 | 使用者排定順序 | 新增 |
@@ -341,7 +341,7 @@ Demo 簡化：
 
 | 欄位 | 型別 | 說明 | 狀態 |
 | --- | --- | --- | --- |
-| `comment_id` | INTEGER PK AUTOINCREMENT | 留言 ID | 目前已有 |
+| `comment_id` | BIGSERIAL PK | 留言 ID | 目前已有 |
 | `post_id` | INTEGER FK | 貼文 | 目前已有 |
 | `user_id` | INTEGER FK | 留言者 | 目前已有 |
 | `content` | TEXT | 留言內容 | 目前已有 |
@@ -482,13 +482,12 @@ cafes
 | 函式 | 狀態 | 功能 |
 | --- | --- | --- |
 | `render_explore_page()` | 已有 | 探索主頁 |
-| `render_google_search_import()` | 已有 | 呼叫 Google 搜尋並匯入資料 |
+| `sync_search_results(keyword)` | 已有 | 單一搜尋操作在背景呼叫 Google 並同步店家資料 |
 | `render_cafe_detail()` | 已有 | 店家詳情與相關貼文 |
 | `filtered_cafes()` | 已有 | 現階段 keyword / area / rating / tags 篩選 |
 | `search_cafes(keyword, api_key, location, radius)` | 已有 | Google Places 搜尋 |
 | `fetch_place_details(place_id, api_key)` | 已有 | Google Place Details |
 | `static_map_url(cafes, api_key)` | 已有 | 地圖圖片 URL |
-| `search_local_cafes(filters)` | 建議新增 | 以完整 filters 查本機資料庫 |
 | `apply_explore_filters(filters)` | 建議新增 | 將 UI 篩選整理為查詢條件 |
 | `get_cafe_detail_view(cafe_id)` | 建議新增 | 店家資料 + traits + photos + posts |
 | `calculate_open_now(opening_hours)` | 未來 | 判斷目前是否營業中 |
@@ -517,7 +516,7 @@ cafes
 
 | 函式 | 狀態 | 功能 |
 | --- | --- | --- |
-| `connect()` | 已有 | 開 SQLite connection |
+| `connect()` | 已有 | 依設定連 Supabase PostgreSQL 或本機 SQLite fallback |
 | `initialize_database()` | 已有 | 建立 table 與 seed |
 | `migrate_existing_tables()` | 已有 | 舊 DB 增欄 |
 | `seed_cafes()` | 已有 | 初始咖啡廳資料 |
@@ -612,16 +611,17 @@ Demo 版本登入原則：
 
 ```text
 使用者輸入搜尋文字
-→ 先查 SQLite 現有 cafes
-→ 使用者按 Google 搜尋 / 本機不足
+→ 使用者按唯一的搜尋按鈕
 → google_maps.search_cafes()
 → database.upsert_cafe()
-→ list_cafes_by_filters()
+→ 合併 cafes、社群評分與標籤後套用篩選
 → 地圖與列表顯示同一批 cafes
 ```
 
 重要規則：
 
+- 探索頁僅顯示一個搜尋框，不讓使用者選擇「資料庫搜尋」或「Google 搜尋」。
+- Supabase PostgreSQL 是共用背景資料層；未設定雲端前才使用 SQLite fallback。
 - Google API 結果需先正規化後寫 DB。
 - 畫面不直接保存 API raw payload。
 - 地圖與結果列表不可各自查不同資料來源，避免畫面不一致。
@@ -719,7 +719,7 @@ wireframe 中收藏 icon 指向店家收藏，所以貼文詳情需要知道 `ca
 | 功能 | 資料支援 |
 | --- | --- |
 | 手機版三主頁導覽 | session state |
-| Google 搜尋並顯示咖啡廳 | `cafes`, Google Places |
+| 單一搜尋框搜尋並顯示咖啡廳 | `cafes`, Google Places |
 | 地圖顯示點位 | `cafes.lat/lng` |
 | tags / 評分篩選 | `cafes.tags`, `rating`, `user_rating` |
 | 咖啡廳收藏 | `favorites` |
@@ -777,4 +777,3 @@ Schema owner：database schema / migration / seed_data / import scripts
 - PR 描述必須寫「新增 / 修改哪些函式」。
 - 若動到 table 或 column，必須由 schema owner review。
 - 禁止直接刪除使用者本機資料庫作為 migration 方法。
-

@@ -121,7 +121,7 @@ def inject_mobile_styles():
 
         .bottom-nav [role="radiogroup"] {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 0.18rem;
         }
 
@@ -144,6 +144,30 @@ def inject_mobile_styles():
 
         .stImage img {
             border-radius: 14px;
+        }
+
+        .profile-avatar {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 0.55rem;
+            border-radius: 999px;
+            background: #e5ded8;
+            color: #7f4827;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .gallery-placeholder {
+            aspect-ratio: 1 / 1.18;
+            background: #eee9e5;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9c8f86;
+            margin-bottom: 0.4rem;
         }
 
         @media (max-width: 520px) {

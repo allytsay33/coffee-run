@@ -11,7 +11,6 @@ import database
 from pages.auth import render_login_page, render_mobile_nav
 from pages.explore import render_explore_page
 from pages.profile import render_profile_page
-from pages.ranking import render_ranking_page
 from pages.social import render_social_page
 from state import initialize_state
 from styles import inject_mobile_styles
@@ -22,9 +21,14 @@ def main():
     st.set_page_config(page_title="Coffee Run", page_icon="Coffee", layout="centered")
     inject_mobile_styles()
 
-    # Database initialization is idempotent: it creates missing tables and seeds
-    # demo cafes, but it does not erase existing user data.
-    database.initialize_database()
+    # Database initialization creates missing tables and seed content without
+    # erasing user data, whether storage is local or hosted by Supabase.
+    try:
+        database.initialize_database()
+    except Exception as error:
+        st.error("資料庫連線失敗。請檢查 Supabase 連線字串與套件安裝狀態。")
+        st.code(str(error))
+        st.stop()
     initialize_state()
 
     # The app uses a classroom-friendly fake login. Without a logged-in user,
@@ -40,8 +44,6 @@ def main():
         render_social_page()
     elif page == "個人頁":
         render_profile_page()
-    else:
-        render_ranking_page()
 
 
 if __name__ == "__main__":

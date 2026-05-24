@@ -68,6 +68,7 @@ def search_cafes(keyword, api_key, location=TAIPEI_CENTER, radius=3500):
     cafes = []
     for item in payload.get("results", []):
         geometry = item.get("geometry", {}).get("location", {})
+        open_now = item.get("opening_hours", {}).get("open_now")
         place_id = item.get("place_id")
         if not place_id:
             continue
@@ -85,6 +86,7 @@ def search_cafes(keyword, api_key, location=TAIPEI_CENTER, radius=3500):
                 "tags": ["Google Places", "待補充"],
                 "description": "來自 Google Places 搜尋結果，可由使用者貼文補充細節。",
                 "opening_hours": "詳情頁查詢",
+                "open_now": int(open_now) if open_now is not None else None,
                 "website": "",
                 "maps_url": google_maps_url(place_id),
                 "source": "google_places",
@@ -114,6 +116,7 @@ def fetch_place_details(place_id, api_key):
     result = payload.get("result", {})
     geometry = result.get("geometry", {}).get("location", {})
     opening_hours = result.get("opening_hours", {}).get("weekday_text", [])
+    open_now = result.get("opening_hours", {}).get("open_now")
     return {
         "name": result.get("name"),
         "address": result.get("formatted_address"),
@@ -121,6 +124,7 @@ def fetch_place_details(place_id, api_key):
         "lng": geometry.get("lng"),
         "rating": result.get("rating", 0) or 0,
         "opening_hours": "\n".join(opening_hours),
+        "open_now": int(open_now) if open_now is not None else None,
         "website": result.get("website", ""),
         "maps_url": result.get("url", google_maps_url(place_id)),
     }

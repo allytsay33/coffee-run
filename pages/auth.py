@@ -32,12 +32,8 @@ def render_mobile_nav():
         "探索": "探索地圖",
         "社群": "社群",
         "我的": "個人頁",
-        "排行": "推薦排行",
     }
     page_to_label = {page: label for label, page in label_to_page.items()}
-    if "current_page" not in st.session_state:
-        st.session_state.current_page = "探索地圖"
-
     current_label = page_to_label.get(st.session_state.current_page, "探索")
     st.markdown('<div class="bottom-nav">', unsafe_allow_html=True)
     selected_label = st.radio(

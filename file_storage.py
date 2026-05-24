@@ -19,3 +19,8 @@ def save_uploaded_file(uploaded_file, folder):
     destination = UPLOAD_DIR / filename
     destination.write_bytes(uploaded_file.getbuffer())
     return str(destination)
+
+
+def save_uploaded_files(uploaded_files, folder):
+    """Persist multiple uploaded images while retaining their chosen order."""
+    return [save_uploaded_file(uploaded_file, folder) for uploaded_file in uploaded_files or []]
