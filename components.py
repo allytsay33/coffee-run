@@ -4,6 +4,7 @@ from html import escape
 from pathlib import Path
 
 import pandas as pd
+import pydeck as pdk
 import streamlit as st
 
 import database
@@ -23,47 +24,72 @@ def render_brand_header():
     """Render the compact BrewBound identity bar and publish shortcut."""
     user = st.session_state.user
     initial = escape((user.get("display_name") or user["username"] or "C")[0].upper())
+    display_name = escape(user.get("display_name") or user["username"])
     with st.container(key="brewbound_header"):
-        brand, spacer, publish, avatar = st.columns([3, 4, 2, 2])
-        brand.markdown(
-            """
-            <div class="brand-lockup">
-                <span class="brand-mark">B</span>
-                <span class="brand-copy">
-                    <strong>BrewBound <em>Social</em></strong>
-                    <small>咖啡地圖社群</small>
-                </span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        spacer.markdown(
-            '<div class="header-search-display">⌕　搜尋內湖、深夜、不限時、甜點</div>',
-            unsafe_allow_html=True,
-        )
+        brand, spacer, publish, avatar = st.columns([4, 5, 2, 2])
+        with brand:
+            st.markdown(
+                """
+                <div class="brand-lockup">
+                    <span class="brand-mark">B</span>
+                    <span class="brand-copy">
+                        <strong>BrewBound <em>Social</em></strong>
+                        <small>咖啡地圖社群</small>
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button("　", key="header_brand_logo"):
+                st.session_state.current_page = "探索地圖"
+                st.rerun()
+        spacer.empty()
         if publish.button("＋　新探店貼文", key="header_new_post", help="建立探店筆記", width="stretch"):
             st.session_state.current_page = "社群"
             st.session_state.social_view = "create"
             st.rerun()
-        avatar.markdown(
-            f'<div class="header-user"><div class="header-avatar">{initial}</div>'
-            f'<span>{escape(user.get("display_name") or user["username"])} 的咖啡日常</span></div>',
-            unsafe_allow_html=True,
-        )
+        if avatar.button(f"{display_name} 的咖啡日常", key="header_profile_link", width="stretch"):
+            st.session_state.current_page = "個人頁"
+            st.rerun()
 
 
-def render_map(cafes):
+def render_map(cafes, key="brewbound_map"):
     """Render the exact cafe result set on a map."""
     map_cafes = [cafe for cafe in cafes if cafe.get("lat") is not None and cafe.get("lng") is not None]
     if not map_cafes:
         st.info("目前沒有符合條件的地圖點位。")
         return
     static_url = google_maps.static_map_url(map_cafes, current_api_key(), width=640, height=420)
-    with st.container(key="brewbound_map"):
+    with st.container(key=key):
         if static_url:
             st.image(static_url, width="stretch")
         else:
-            st.map(pd.DataFrame([{"lat": cafe["lat"], "lon": cafe["lng"]} for cafe in map_cafes]), height=360)
+            map_data = pd.DataFrame([{"lat": cafe["lat"], "lon": cafe["lng"]} for cafe in map_cafes])
+            st.pydeck_chart(
+                pdk.Deck(
+                    map_style=None,
+                    initial_view_state=pdk.ViewState(
+                        latitude=map_data["lat"].mean(),
+                        longitude=map_data["lon"].mean(),
+                        zoom=13,
+                        pitch=0,
+                    ),
+                    layers=[
+                        pdk.Layer(
+                            "ScatterplotLayer",
+                            data=map_data,
+                            get_position="[lon, lat]",
+                            get_fill_color=[214, 83, 66, 180],
+                            get_radius=45,
+                            radius_min_pixels=3,
+                            radius_max_pixels=8,
+                            pickable=True,
+                        )
+                    ],
+                ),
+                height=360,
+                use_container_width=True,
+            )
 
 
 def toggle_favorite_button(cafe_id, key, stretch=False):
@@ -156,16 +182,17 @@ def render_post_card(post, compact=False, open_detail=True):
                 ) + "</div>",
                 unsafe_allow_html=True,
             )
-        st.caption(f'愛心 {post["like_count"]}　留言 {post["comment_count"]}')
+        st.caption(f'♥ {post["like_count"]}　💬 {post["comment_count"]}')
 
         actions = st.columns(3)
-        if actions[0].button("收回愛心" if liked else "愛心", key=f'like_{post["post_id"]}_{compact}', width="stretch"):
+        if actions[0].button("♥" if liked else "♡", key=f'like_{post["post_id"]}_{compact}', width="stretch"):
             database.toggle_like(user_id, post["post_id"])
             st.rerun()
         if open_detail and actions[1].button("查看", key=f'post_detail_{post["post_id"]}_{compact}', width="stretch"):
             st.session_state.selected_post_id = post["post_id"]
             st.session_state.social_view = "detail"
             st.session_state.current_page = "社群"
+            st.session_state.pending_nav_label = "社群"
             st.rerun()
         with actions[2]:
             toggle_favorite_button(post["cafe_id"], f'post_save_cafe_{post["post_id"]}_{compact}', True)

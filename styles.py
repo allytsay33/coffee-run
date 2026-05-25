@@ -19,6 +19,7 @@ def inject_mobile_styles():
             --line: #e6e2d3;
             --muted: #a8a18c;
             --gold: #c78b35;
+            --streamlit-toolbar-height: 4.65rem;
         }
 
         html, body, [data-testid="stAppViewContainer"] {
@@ -33,7 +34,7 @@ def inject_mobile_styles():
         .block-container {
             max-width: 460px;
             min-height: 100vh;
-            padding: 0 1rem 6.4rem;
+            padding: var(--streamlit-toolbar-height) 1rem 6.4rem;
             background: var(--paper);
             box-shadow: 0 0 0 1px rgba(230, 226, 211, 0.72), 0 18px 48px rgba(55, 37, 26, 0.08);
         }
@@ -121,7 +122,7 @@ def inject_mobile_styles():
             position: sticky;
             top: 0;
             z-index: 900;
-            margin: 0 -1rem 1rem;
+            margin: calc(-1 * var(--streamlit-toolbar-height)) -1rem 1rem;
             padding: 0.68rem 0.85rem 0.62rem;
             background: rgba(255, 255, 255, 0.94);
             border-bottom: 1px solid var(--line);
@@ -132,6 +133,30 @@ def inject_mobile_styles():
         .st-key-brewbound_header [data-testid="stHorizontalBlock"] {
             align-items: center;
             gap: 0.35rem;
+        }
+
+        .st-key-brewbound_header [data-testid="stColumn"] {
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .st-key-brewbound_header [data-testid="stVerticalBlock"] {
+            gap: 0 !important;
+            width: 100%;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .st-key-brewbound_header [data-testid="stMarkdown"] {
+            display: flex !important;
+            align-items: center !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .st-key-brewbound_header [data-testid="stMarkdown"] p {
+            margin: 0 !important;
+            line-height: 1 !important;
         }
 
         .brand-lockup {
@@ -189,6 +214,45 @@ def inject_mobile_styles():
             color: #fff;
             font-size: 1.02rem;
         }
+
+        .st-key-header_brand_logo {
+            margin-top: -5rem;
+            height: 5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .st-key-header_brand_logo button {
+            height: 5rem !important;
+            width: 150% !important;
+            background: transparent !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+            color: transparent !important;
+            font-size: 0 !important;
+            cursor: pointer !important;
+        }
+
+        .st-key-header_new_post button {
+            width: 168px !important;
+            min-width: 168px !important;
+            margin-left: auto;
+        }
+
+        .st-key-header_profile_link button {
+            min-height: 2.1rem;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            border-color: transparent !important;
+            background: transparent !important;
+            color: var(--coffee) !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            font-size: 0.73rem !important;
+            font-weight: 700 !important;
+            white-space: nowrap;
+        }
+
 
         .header-avatar {
             height: 2.1rem;
@@ -501,6 +565,47 @@ def inject_mobile_styles():
             margin-top: 0.15rem;
         }
 
+        /* ── Login back button ── */
+        .st-key-login_back button,
+        .st-key-register_back button {
+            background: transparent !important;
+            border-color: transparent !important;
+            color: var(--coffee) !important;
+            box-shadow: none !important;
+            padding-left: 0 !important;
+            font-size: 0.88rem !important;
+            font-weight: 600 !important;
+            justify-content: flex-start !important;
+        }
+
+        /* ── Inline bio input ── */
+        .st-key-profile_identity .st-key-inline_bio_input input {
+            background: transparent !important;
+            border-color: var(--line) !important;
+            border-radius: 8px !important;
+            font-size: 0.8rem !important;
+            color: #677084 !important;
+            padding: 0.3rem 0.5rem !important;
+        }
+
+        .st-key-profile_identity .st-key-inline_bio_input input:focus {
+            border-color: var(--coffee) !important;
+            box-shadow: none !important;
+        }
+
+        /* ── Profile TOP 3 container ── */
+
+        .st-key-profile_top3 [data-testid="stVerticalBlockBorderWrapper"],
+        .st-key-profile_top3 [data-testid="stVerticalBlock"],
+        .st-key-profile_top3 > div,
+        .st-key-profile_top3 > div > div {
+            padding-bottom: 0.8rem !important;
+        }
+
+        .st-key-profile_top3 [data-testid="stHorizontalBlock"] {
+            margin-bottom: 0.3rem !important;
+        }
+
         /* ── Login page ── */
         .login-logo {
             text-align: center;
@@ -692,12 +797,15 @@ def inject_mobile_styles():
         @media (min-width: 769px) {
             .block-container {
                 max-width: 1440px;
-                padding: 0 2.2rem 2.3rem 10.3rem;
+                padding: var(--streamlit-toolbar-height) 2.2rem 2.3rem 10.3rem;
                 box-shadow: none;
             }
 
             .st-key-brewbound_header {
-                margin: 0 -2.2rem 1.3rem -10.3rem;
+                width: min(calc(100vw - 4.4rem), 1600px) !important;
+                max-width: min(calc(100vw - 4.4rem), 1600px) !important;
+                min-width: min(calc(100vw - 4.4rem), 1600px) !important;
+                margin: 0 0 1.3rem calc(-10.3rem + 2.2rem);
                 padding: 0.82rem 3.8rem;
             }
 
@@ -730,6 +838,11 @@ def inject_mobile_styles():
                 font-size: 0.9rem;
             }
 
+            .st-key-header_profile_link button {
+                height: 3.05rem;
+                font-size: 0.88rem !important;
+            }
+
             .header-avatar {
                 height: 3.05rem;
                 width: 3.05rem;
@@ -742,21 +855,22 @@ def inject_mobile_styles():
             .st-key-liquid_glass_nav {
                 position: fixed;
                 left: max(1rem, calc((100vw - 1440px) / 2 + 1.1rem));
-                top: 7.3rem;
+                top: calc(var(--streamlit-toolbar-height) + 6.25rem);
                 bottom: auto;
                 transform: none;
-                width: 7.5rem;
+                width: 6.6rem;
                 margin: 0;
-                padding: 0.42rem;
+                padding: 0.34rem;
                 box-shadow: 0 12px 28px rgba(72, 55, 40, 0.08);
                 border-color: var(--line);
-                border-radius: 1.45rem;
+                border-radius: 1.25rem;
                 background: rgba(255, 253, 250, 0.86);
             }
 
             .st-key-liquid_glass_nav [role="radiogroup"] {
                 flex-direction: column;
-                gap: 0.28rem;
+                gap: 0.16rem;
+                align-items: center;
             }
 
             .st-key-liquid_glass_nav [role="radiogroup"]::before {
@@ -765,11 +879,11 @@ def inject_mobile_styles():
 
             .st-key-liquid_glass_nav [data-baseweb="radio"] {
                 flex: 0 0 auto;
-                width: 100%;
-                min-height: 3.4rem;
+                width: 5.55rem;
+                min-height: 2.95rem;
                 flex-direction: column;
-                gap: 0.18rem;
-                padding: 0.45rem 0.3rem;
+                gap: 0.08rem;
+                padding: 0.32rem 0.22rem;
             }
 
             .st-key-liquid_glass_nav [data-baseweb="radio"]::before {

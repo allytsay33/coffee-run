@@ -7,7 +7,6 @@ import streamlit as st
 
 import database
 from components import render_cafe_card, render_map, render_post_card
-from config import PROFILE_TABS
 from file_storage import save_uploaded_file
 
 
@@ -22,10 +21,27 @@ def render_profile_header(user, stats):
             st.markdown(f'<div class="profile-avatar">{initial}</div>', unsafe_allow_html=True)
     with identity:
         st.markdown(
-            f'<div class="profile-name">{escape(user.get("display_name") or user["username"])}　Coffee</div>'
-            f'<div class="profile-handle">@{escape(user["username"])}</div>'
-            f'<p class="profile-bio">{escape(user.get("bio") or "在城市街頭尋找完美的咖啡角落，記錄每一次探店日常。")}</p>',
+            f'<div class="profile-name">{escape(user.get("display_name") or user["username"])}\'s Coffee</div>'
+            f'<div class="profile-handle">@{escape(user["username"])}</div>',
             unsafe_allow_html=True,
+        )
+
+        def _save_bio():
+            new_bio = st.session_state.get("inline_bio_input", "")
+            database.update_user_profile(
+                user["user_id"],
+                user.get("display_name") or user["username"],
+                new_bio,
+                None,
+            )
+
+        st.text_input(
+            "個人簡介",
+            value=user.get("bio") or "",
+            placeholder="請介紹一下你自己！",
+            key="inline_bio_input",
+            label_visibility="collapsed",
+            on_change=_save_bio,
         )
     with metric_area:
         metrics = st.columns(3)
@@ -133,17 +149,17 @@ def render_visit_records(user, favorites):
 def render_footprint_map(user):
     """Render only cafes where the user has published a visit post."""
     footprints = database.list_footprint_cafes(user["user_id"])
-    with st.container(border=True, key="profile_map"):
+    with st.container(border=True, key="profile_footprint_map"):
         st.markdown('<div class="profile-section-title">足跡地圖</div>', unsafe_allow_html=True)
         st.caption("顯示你已發佈探店貼文的咖啡廳。")
-        render_map(footprints)
+        render_map(footprints, key="profile_footprint_brewbound_map")
 
 
 def render_saved_map(favorites):
     """Render favorite cafes as map markers and cards in the saved subpage."""
-    with st.container(border=True, key="profile_map"):
+    with st.container(border=True, key="profile_saved_map"):
         st.markdown('<div class="profile-section-title">已收藏</div>', unsafe_allow_html=True)
-        render_map(favorites)
+        render_map(favorites, key="profile_saved_brewbound_map")
     if favorites:
         for cafe in favorites:
             render_cafe_card(cafe, compact=True)
@@ -160,31 +176,76 @@ def render_profile_page():
     stats = database.get_user_stats(user["user_id"])
     with st.container(border=True, key="profile_identity"):
         render_profile_header(user, stats)
-    actions = st.columns([2, 2, 1])
+    actions = st.columns([1, 1])
     if actions[0].button("編輯個人檔案", width="stretch"):
         st.session_state.profile_editing = True
         st.rerun()
     actions[1].button("分享個人檔案", width="stretch", disabled=True)
-    with actions[2]:
-        render_profile_settings()
 
     favorites = database.list_favorite_cafes(user["user_id"])
-    default_tab = st.session_state.profile_tab if st.session_state.profile_tab in PROFILE_TABS else PROFILE_TABS[0]
-    if "profile_tab_selector" not in st.session_state:
-        st.session_state.profile_tab_selector = default_tab
-    with st.container(key="profile_subnav"):
-        selected_tab = st.segmented_control(
-            "個人頁分頁",
-            PROFILE_TABS,
-            label_visibility="collapsed",
-            key="profile_tab_selector",
-        ) or default_tab
+
+    # TOP 3 區塊（常駐顯示於頁面頂端）
+    if st.session_state.get("top3_editing"):
+        render_top3_editor(user)
+    else:
+        with st.container(border=True, key="profile_top3"):
+            head = st.columns([4, 1])
+            top3 = database.get_user_top3(user["user_id"])
+            if not any(top3):
+                head[0].markdown(
+                    '<div class="profile-section-title">我的 TOP 3 咖啡名單</div>'
+                    '<p style="font-size:0.78rem;color:var(--muted);margin:0.15rem 0 0;">點右上角「編輯」設定你的 TOP 3。</p>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                head[0].markdown('<div class="profile-section-title">我的 TOP 3 咖啡名單</div>', unsafe_allow_html=True)
+            if head[1].button("編輯", key="edit_top3", width="stretch"):
+                st.session_state.top3_editing = True
+                st.rerun()
+            top_columns = st.columns(3)
+            for index, cafe in enumerate(top3):
+                if cafe:
+                    rating = cafe["user_rating"] or cafe["rating"]
+                    top_columns[index].markdown(
+                        f'<div class="top-cafe"><b>{index + 1}</b><strong>{escape(cafe["name"])}</strong>'
+                        f'<small>★ {rating:.1f}</small></div>',
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    top_columns[index].markdown(
+                        f'<div class="top-cafe top-cafe-empty"><b>{index + 1}</b><span>未設定</span></div>',
+                        unsafe_allow_html=True,
+                    )
+
+    # 足跡地圖（常駐顯示於頁面頂端）
+    render_footprint_map(user)
+
+    # 分頁：探店紀錄 | 已收藏
+    visible_tabs = ["探店紀錄", "已收藏"]
+    default_tab = st.session_state.profile_tab if st.session_state.profile_tab in visible_tabs else "探店紀錄"
+    selected_tab = st.segmented_control(
+        "個人頁分頁",
+        visible_tabs,
+        default=default_tab,
+        label_visibility="collapsed",
+    ) or default_tab
     st.session_state.profile_tab = selected_tab
 
-    with st.container(key="profile_tab_content"):
-        if selected_tab == "探店紀錄":
-            render_visit_records(user, favorites)
-        elif selected_tab == "足跡地圖":
-            render_footprint_map(user)
+    if selected_tab == "探店紀錄":
+        posts = database.list_posts(user_id=user["user_id"])
+        st.markdown('<div class="coffee-section-title">探店貼文</div>', unsafe_allow_html=True)
+        if not posts:
+            st.info("你還沒有探店紀錄。")
         else:
-            render_saved_map(favorites)
+            post_columns = st.columns(3)
+            for index, post in enumerate(posts):
+                with post_columns[index % 3]:
+                    render_post_card(post, compact=True)
+    else:
+        render_saved_map(favorites)
+
+    st.divider()
+    if st.button("登出", key="profile_logout", width="stretch"):
+        st.session_state.user = None
+        st.session_state.login_view = "welcome"
+        st.rerun()

@@ -106,6 +106,12 @@ def render_mobile_nav():
     }
     page_to_label = {page: label for label, page in label_to_page.items()}
     current_label = page_to_label.get(st.session_state.current_page, "探索")
+    pending_nav_label = st.session_state.pop("pending_nav_label", None)
+    if pending_nav_label in label_to_page:
+        current_label = pending_nav_label
+        st.session_state.mobile_bottom_nav = current_label
+    elif "mobile_bottom_nav" not in st.session_state:
+        st.session_state.mobile_bottom_nav = current_label
     with st.container(key="liquid_glass_nav"):
         selected_label = st.radio(
             "頁面",

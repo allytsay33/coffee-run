@@ -66,7 +66,7 @@ def render_cafe_detail(cafe_id):
             st.session_state.selected_cafe_id = None
             st.rerun()
         with top[2]:
-            toggle_favorite_button(cafe["cafe_id"], "detail_favorite")
+            toggle_favorite_button(cafe["cafe_id"], "detail_favorite", True)
 
         rating = cafe["user_rating"] or cafe["rating"]
         st.markdown(f'<div class="coffee-card-title">{cafe["name"]}</div>', unsafe_allow_html=True)
@@ -170,8 +170,4 @@ def render_explore_page():
             if st.session_state.selected_cafe_id:
                 render_cafe_detail(st.session_state.selected_cafe_id)
             else:
-                st.markdown(
-                    '<div class="map-status"><span></span>已成功啟用 Google Map 官方地圖 <strong>詳細</strong></div>',
-                    unsafe_allow_html=True,
-                )
                 render_map(results)
