@@ -38,33 +38,32 @@ def render_create_post_page():
         st.info("請先到探索頁搜尋並加入一間咖啡廳。")
         return
     options = {f'{cafe["name"]}｜{cafe["area"]}': cafe["cafe_id"] for cafe in cafes}
-    with st.form("publish_post_form", clear_on_submit=True):
+
+    if "custom_tags" not in st.session_state:
+        st.session_state.custom_tags = []
+
+    with st.form("publish_post_form", clear_on_submit=False):
         cafe_label = st.selectbox("選擇咖啡廳", list(options))
         photos = st.file_uploader("選擇照片", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
         content = st.text_area("編輯內文", placeholder="記錄這次探店體驗...")
         rating = st.slider("咖啡廳評分", 1, 5, 4)
-        tags = st.multiselect("咖啡廳標籤", DEFAULT_TAGS)
-        st.caption("補充資訊會成為探索篩選的資料來源")
-        has_outlets = st.checkbox("插座多")
-        no_time_limit = st.checkbox("不限時")
-        open_late = st.checkbox("深夜咖啡廳")
-        quiet_score = st.slider("安靜程度", 1, 5, 3)
-        study_score = st.slider("適合讀書", 1, 5, 3)
-        chat_score = st.slider("適合聊天", 1, 5, 3)
+        all_tags = DEFAULT_TAGS + st.session_state.custom_tags
+        tags = st.multiselect("咖啡廳標籤", all_tags)
+        new_tag_input = st.text_input("自訂標籤", placeholder="輸入標籤名稱，點「新增標籤」加入選項")
+        add_tag = st.form_submit_button("新增標籤")
         submitted = st.form_submit_button("發布", width="stretch")
-        if submitted:
-            if not content.strip():
-                st.warning("請輸入貼文內容。")
-                return
+
+    if add_tag:
+        tag = new_tag_input.strip()
+        if tag and tag not in DEFAULT_TAGS and tag not in st.session_state.custom_tags:
+            st.session_state.custom_tags.append(tag)
+        st.rerun()
+
+    if submitted:
+        if not content.strip():
+            st.warning("請輸入貼文內容。")
+        else:
             paths = save_uploaded_files(photos, "post")
-            feedback = {
-                "has_outlets": int(has_outlets),
-                "no_time_limit": int(no_time_limit),
-                "open_late": int(open_late),
-                "quiet_score": quiet_score,
-                "study_score": study_score,
-                "chat_score": chat_score,
-            }
             database.create_post(
                 st.session_state.user["user_id"],
                 options[cafe_label],
@@ -72,9 +71,9 @@ def render_create_post_page():
                 rating,
                 paths,
                 tags,
-                feedback,
             )
             st.session_state.social_view = "feed"
+            st.session_state.custom_tags = []
             st.success("已發布探店紀錄")
             st.rerun()
 
