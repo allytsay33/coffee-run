@@ -667,6 +667,7 @@ def get_cafe(cafe_id):
     return cafes[0] if cafes else None
 
 
+@st.cache_data(ttl=120)
 def list_areas():
     """Return distinct areas used in explore filters."""
     with connect() as connection:
@@ -674,6 +675,7 @@ def list_areas():
     return [row["area"] for row in rows]
 
 
+@st.cache_data(ttl=120)
 def list_all_tags():
     """Return all tags from the tags reference table plus any used in posts/cafes."""
     tags = set()
@@ -902,6 +904,7 @@ def get_post(post_id):
     return posts[0] if posts else None
 
 
+@st.cache_data(ttl=60)
 def get_cafe_photos(cafe_id, limit=6):
     """Use community post photos as the cafe's detail gallery."""
     with connect() as connection:
@@ -956,6 +959,7 @@ def add_comment(user_id, post_id, content):
             )
 
 
+@st.cache_data(ttl=30)
 def list_comments(post_id):
     """List comments for one post in chronological order."""
     with connect() as connection:
