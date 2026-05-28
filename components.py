@@ -53,14 +53,96 @@ def render_brand_header():
             st.rerun()
 
 
-def render_map(cafes, key="brewbound_map"):
-    """Render the exact cafe result set on a map."""
+def render_map(cafes, key="brewbound_map", interactive=False):
+    """Render the exact cafe result set on a map.
+
+    When interactive=True the map always uses pydeck with a hover tooltip
+    showing the cafe name, rating, area, and opening hours.
+    """
     map_cafes = [cafe for cafe in cafes if cafe.get("lat") is not None and cafe.get("lng") is not None]
     if not map_cafes:
         st.info("目前沒有符合條件的地圖點位。")
         return
-    static_url = google_maps.static_map_url(map_cafes, current_api_key(), width=640, height=420)
+
+    _FALLBACK_PHOTOS = (
+        "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=400&q=80",
+        "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=80",
+        "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&q=80",
+    )
+
+    def _cafe_photo(cafe, index):
+        """Return first HTTP photo for a cafe, or a fallback Unsplash image."""
+        try:
+            for photo in database.get_cafe_photos(cafe["cafe_id"]):
+                if isinstance(photo, str) and photo.startswith("http"):
+                    return photo
+        except Exception:
+            pass
+        return _FALLBACK_PHOTOS[index % len(_FALLBACK_PHOTOS)]
+
     with st.container(key=key):
+        if interactive:
+            map_data = pd.DataFrame([{
+                "lat": cafe["lat"],
+                "lon": cafe["lng"],
+                "name": cafe.get("name", ""),
+                "rating": f'{(cafe.get("user_rating") or cafe.get("rating") or 0):.1f}',
+                "area": cafe.get("area", ""),
+                "hours": cafe.get("opening_hours") or "營業時間待補",
+                "image_url": _cafe_photo(cafe, i),
+            } for i, cafe in enumerate(map_cafes)])
+            st.pydeck_chart(
+                pdk.Deck(
+                    map_style=None,
+                    initial_view_state=pdk.ViewState(
+                        latitude=map_data["lat"].mean(),
+                        longitude=map_data["lon"].mean(),
+                        zoom=13,
+                        pitch=0,
+                    ),
+                    layers=[
+                        pdk.Layer(
+                            "ScatterplotLayer",
+                            data=map_data,
+                            get_position="[lon, lat]",
+                            get_fill_color=[214, 83, 66, 220],
+                            get_radius=80,
+                            radius_min_pixels=7,
+                            radius_max_pixels=18,
+                            pickable=True,
+                            auto_highlight=True,
+                            get_highlight_color=[124, 94, 67, 255],
+                        )
+                    ],
+                    tooltip={
+                        "html": (
+                            "<div style='font-family:sans-serif;width:200px;border-radius:12px;overflow:hidden;'>"
+                            "<img src='{image_url}' style='width:100%;height:120px;object-fit:cover;display:block;'/>"
+                            "<div style='padding:8px 12px 10px;'>"
+                            "<div style='font-size:14px;font-weight:700;color:#2d241e;margin-bottom:4px;'>{name}</div>"
+                            "<div style='font-size:12px;margin-bottom:3px;'>"
+                            "<span style='color:#c78b35;'>★ {rating}</span>"
+                            "&ensp;<span style='color:#7c5e43;'>{area}</span>"
+                            "</div>"
+                            "<div style='font-size:11px;color:#a8a18c;'>{hours}</div>"
+                            "</div></div>"
+                        ),
+                        "style": {
+                            "backgroundColor": "white",
+                            "border": "1px solid #e6e2d3",
+                            "borderRadius": "12px",
+                            "boxShadow": "0 4px 16px rgba(55,37,26,0.12)",
+                            "padding": "0",
+                            "overflow": "hidden",
+                        },
+                    },
+                ),
+                height=480,
+                use_container_width=True,
+            )
+            return
+
+        static_url = google_maps.static_map_url(map_cafes, current_api_key(), width=640, height=420)
         if static_url:
             st.image(static_url, width="stretch")
         else:
@@ -144,15 +226,32 @@ def render_cafe_card(cafe, compact=False):
             toggle_favorite_button(cafe["cafe_id"], f'favorite_{cafe["cafe_id"]}_{compact}', True)
 
 
-def render_post_images(post):
+def render_post_images(post, small=False):
     """Render all stored photos for one post in upload order."""
     photos = [path for path in post.get("photos", []) if path.startswith("http") or Path(path).exists()]
     if not photos:
-        st.markdown(
+        preview_html = (
+            f'<div class="post-preview post-preview-small"><img src="{POST_PREVIEW_IMAGES[post["post_id"] % len(POST_PREVIEW_IMAGES)]}" '
+            f'alt="{escape(post["cafe_name"])}"><span>PIN &nbsp;{escape(post["cafe_name"])}</span></div>'
+            if small else
             f'<div class="post-preview"><img src="{POST_PREVIEW_IMAGES[post["post_id"] % len(POST_PREVIEW_IMAGES)]}" '
-            f'alt="{escape(post["cafe_name"])}"><span>PIN &nbsp;{escape(post["cafe_name"])}</span></div>',
-            unsafe_allow_html=True,
+            f'alt="{escape(post["cafe_name"])}"><span>PIN &nbsp;{escape(post["cafe_name"])}</span></div>'
         )
+        st.markdown(preview_html, unsafe_allow_html=True)
+        return
+    if small:
+        if len(photos) == 1:
+            st.image(photos[0], width="stretch")
+            if st.button("放大瀏覽", key=f'zoom_{post["post_id"]}_0', width="stretch"):
+                st.session_state.lightbox_photo = photos[0]
+                st.rerun()
+        else:
+            sub = st.columns(min(len(photos), 2))
+            for index, path in enumerate(photos[:2]):
+                sub[index].image(path, width="stretch")
+            if st.button("放大瀏覽", key=f'zoom_{post["post_id"]}_multi', width="stretch"):
+                st.session_state.lightbox_photo = photos[0]
+                st.rerun()
         return
     if len(photos) == 1:
         st.image(photos[0], width="stretch")
@@ -166,14 +265,15 @@ def render_post_card(post, compact=False, open_detail=True):
     """Render one BrewBound-style social note with engagement actions."""
     user_id = st.session_state.user["user_id"]
     liked = database.user_liked_post(user_id, post["post_id"])
-    with st.container(border=True):
+    container = st.container(border=True, key="post_detail_card") if not open_detail else st.container(border=True)
+    with container:
         st.markdown(
             f'<div class="post-location">PIN &nbsp;{escape(post["cafe_name"])}</div>'
             f'<div class="post-author">@{escape(post["username"])}'
             f'<span class="rating-pill">★ {post["rating"]}.0</span></div>',
             unsafe_allow_html=True,
         )
-        render_post_images(post)
+        render_post_images(post, small=not open_detail)
         st.markdown(f'<p class="post-copy">{escape(post["content"])}</p>', unsafe_allow_html=True)
         if post.get("tags"):
             st.markdown(

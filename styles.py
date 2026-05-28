@@ -450,6 +450,76 @@ def inject_mobile_styles():
             margin-bottom: 0.6rem;
         }
 
+        .post-detail-header {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .post-detail-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+
+        .post-detail-info .post-location {
+            margin-bottom: 0;
+        }
+
+        .post-detail-avatar {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            border-radius: 999px;
+            background: var(--soft);
+            color: var(--coffee);
+            border: 1.5px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .post-author-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--coffee-dark);
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .st-key-post_detail_card .post-location {
+            font-size: 0.9rem !important;
+        }
+
+        .st-key-post_detail_card .post-author {
+            font-size: 1.15rem !important;
+        }
+
+        .st-key-post_detail_card .rating-pill {
+            font-size: 0.95rem !important;
+            padding: 0.2rem 0.6rem !important;
+        }
+
+        .st-key-post_detail_card .stImage {
+            display: flex !important;
+            justify-content: center !important;
+        }
+
+        .st-key-post_detail_card .stImage img {
+            max-width: 500px !important;
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        .post-preview-small {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
         .post-preview {
             position: relative;
             border-radius: 14px;
@@ -578,20 +648,6 @@ def inject_mobile_styles():
             justify-content: flex-start !important;
         }
 
-        /* ── Inline bio input ── */
-        .st-key-profile_identity .st-key-inline_bio_input input {
-            background: transparent !important;
-            border-color: var(--line) !important;
-            border-radius: 8px !important;
-            font-size: 0.8rem !important;
-            color: #677084 !important;
-            padding: 0.3rem 0.5rem !important;
-        }
-
-        .st-key-profile_identity .st-key-inline_bio_input input:focus {
-            border-color: var(--coffee) !important;
-            box-shadow: none !important;
-        }
 
         /* ── Profile TOP 3 container ── */
 

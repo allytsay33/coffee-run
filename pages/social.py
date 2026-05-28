@@ -80,6 +80,13 @@ def render_create_post_page():
 
 def render_post_detail(post_id):
     """Render one full social post with comments and cafe collection."""
+    if st.session_state.get("lightbox_photo"):
+        if st.button("← 返回貼文", key="lightbox_back", width="stretch"):
+            st.session_state.lightbox_photo = None
+            st.rerun()
+        st.image(st.session_state.lightbox_photo, use_container_width=True)
+        return
+
     if st.button("返回社群", width="stretch"):
         st.session_state.social_view = "feed"
         st.session_state.selected_post_id = None

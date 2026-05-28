@@ -170,4 +170,4 @@ def render_explore_page():
             if st.session_state.selected_cafe_id:
                 render_cafe_detail(st.session_state.selected_cafe_id)
             else:
-                render_map(results)
+                render_map(results, interactive=True)

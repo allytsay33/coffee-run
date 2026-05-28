@@ -26,23 +26,9 @@ def render_profile_header(user, stats):
             unsafe_allow_html=True,
         )
 
-        def _save_bio():
-            new_bio = st.session_state.get("inline_bio_input", "")
-            database.update_user_profile(
-                user["user_id"],
-                user.get("display_name") or user["username"],
-                new_bio,
-                None,
-            )
-
-        st.text_input(
-            "個人簡介",
-            value=user.get("bio") or "",
-            placeholder="請介紹一下你自己！",
-            key="inline_bio_input",
-            label_visibility="collapsed",
-            on_change=_save_bio,
-        )
+        bio = user.get("bio") or ""
+        bio_html = escape(bio) if bio else '<span style="color:#c0b9a8;">尚未填寫個人簡介</span>'
+        st.markdown(f'<div class="profile-bio">{bio_html}</div>', unsafe_allow_html=True)
     with metric_area:
         metrics = st.columns(3)
         metrics[0].metric("探店紀錄", stats["post_count"])
@@ -176,11 +162,9 @@ def render_profile_page():
     stats = database.get_user_stats(user["user_id"])
     with st.container(border=True, key="profile_identity"):
         render_profile_header(user, stats)
-    actions = st.columns([1, 1])
-    if actions[0].button("編輯個人檔案", width="stretch"):
+    if st.button("編輯個人檔案", width="stretch"):
         st.session_state.profile_editing = True
         st.rerun()
-    actions[1].button("分享個人檔案", width="stretch", disabled=True)
 
     favorites = database.list_favorite_cafes(user["user_id"])
 

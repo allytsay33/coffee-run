@@ -116,7 +116,6 @@ def render_mobile_nav():
         selected_label = st.radio(
             "頁面",
             list(label_to_page),
-            index=list(label_to_page).index(current_label),
             horizontal=True,
             label_visibility="collapsed",
             key="mobile_bottom_nav",
