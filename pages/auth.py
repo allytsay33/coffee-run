@@ -1,5 +1,6 @@
 """Login and mobile navigation UI."""
 
+import base64
 from pathlib import Path
 
 import streamlit as st
@@ -7,15 +8,20 @@ import streamlit as st
 import database
 from file_storage import save_uploaded_file
 
-# Replace data/logo.png with your real logo file to use it.
 _LOGO_PATH = Path(__file__).parent.parent / "data" / "logo.png"
 _LOGO_PLACEHOLDER = "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&q=80"
 
 
+def _logo_src() -> str:
+    if _LOGO_PATH.exists():
+        b64 = base64.b64encode(_LOGO_PATH.read_bytes()).decode()
+        return f"data:image/png;base64,{b64}"
+    return _LOGO_PLACEHOLDER
+
+
 def _render_logo():
-    src = str(_LOGO_PATH) if _LOGO_PATH.exists() else _LOGO_PLACEHOLDER
     st.markdown(
-        f'<div class="login-logo"><img src="{src}" alt="Coffee Run logo"></div>',
+        f'<div class="login-logo"><img src="{_logo_src()}" alt="Coffee Run logo"></div>',
         unsafe_allow_html=True,
     )
 

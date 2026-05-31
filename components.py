@@ -1,5 +1,6 @@
 """Reusable mobile UI blocks for maps, cafes, and community posts."""
 
+import base64
 from html import escape
 from pathlib import Path
 
@@ -12,6 +13,15 @@ import google_maps
 from api_keys import current_api_key
 from formatters import format_distance
 
+_LOGO_PATH = Path(__file__).parent / "data" / "logo.png"
+
+
+def _header_logo_src() -> str:
+    if _LOGO_PATH.exists():
+        b64 = base64.b64encode(_LOGO_PATH.read_bytes()).decode()
+        return f"data:image/png;base64,{b64}"
+    return ""
+
 
 POST_PREVIEW_IMAGES = (
     "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=720&q=80",
@@ -21,19 +31,24 @@ POST_PREVIEW_IMAGES = (
 
 
 def render_brand_header():
-    """Render the compact BrewBound identity bar and publish shortcut."""
+    """Render the compact Coffee Run identity bar and publish shortcut."""
     user = st.session_state.user
-    initial = escape((user.get("display_name") or user["username"] or "C")[0].upper())
     display_name = escape(user.get("display_name") or user["username"])
+    logo_src = _header_logo_src()
+    logo_html = (
+        f'<img src="{logo_src}" class="brand-logo-img" alt="Coffee Run">'
+        if logo_src
+        else '<span class="brand-mark">C</span>'
+    )
     with st.container(key="brewbound_header"):
         brand, spacer, publish, avatar = st.columns([4, 5, 2, 2])
         with brand:
             st.markdown(
-                """
+                f"""
                 <div class="brand-lockup">
-                    <span class="brand-mark">B</span>
+                    {logo_html}
                     <span class="brand-copy">
-                        <strong>BrewBound <em>Social</em></strong>
+                        <strong>Coffee Run</strong>
                         <small>咖啡地圖社群</small>
                     </span>
                 </div>

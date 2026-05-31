@@ -669,12 +669,24 @@ def inject_mobile_styles():
         }
 
         .login-logo img {
-            width: 110px;
-            height: 110px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 3px solid var(--line);
-            box-shadow: 0 4px 18px rgba(124, 94, 67, 0.18);
+            width: 140px;
+            height: 140px;
+            object-fit: contain;
+            border-radius: 1.2rem;
+            box-shadow: 0 4px 18px rgba(124, 94, 67, 0.15);
+        }
+
+        /* ── Brand header logo ── */
+        .brand-logo-img {
+            height: 3.4rem;
+            width: 3.4rem;
+            object-fit: contain;
+            border-radius: 0;
+            background: #f5f0e8;
+            flex-shrink: 0;
+            margin-top: -0.68rem;
+            margin-bottom: -0.62rem;
+            margin-left: -0.85rem;
         }
 
         .login-title {

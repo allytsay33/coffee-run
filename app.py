@@ -25,7 +25,7 @@ def _initialize_database_once():
 
 def main():
     """Initialize app-wide services, then route to the selected page."""
-    st.set_page_config(page_title="BrewBound Social", page_icon="Coffee", layout="wide")
+    st.set_page_config(page_title="Coffee Run", page_icon="☕", layout="wide")
     inject_mobile_styles()
 
     # Table creation and seeding run once per deployment (cached).
